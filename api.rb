@@ -2,11 +2,17 @@ require 'grape'
 require 'mongo'
 require 'bson'
 require 'time'
+
 Mongo::Logger.logger.level = Logger::WARN
 
-#Field9=thibauld&Field10=favre&Field1=tfa.vre%40gmail.com&Field127=France&Field118=67210&Field130=&Field119=test&CreatedBy=democratech&DateCreated=2015-08-05+19%3A33%3A11&EntryId=43&IP=71.235.37.168&HandshakeKey=
+DBURL = ENV['DBURL']
+MCKEY = ENV['MCKEY']
+MCURL = ENV['MCURL']
+MCLIST = ENV['MCLIST']
+MCFHS = ENV['MCFHS']
+WUFHS = ENV['WUFHS']
 
-$db=Mongo::Client.new('mongodb://127.0.0.1:27017/democratech')
+$db=Mongo::Client.new(DBURL)
 $supporteurs=$db[:supporteurs]
 $communes=$db[:communes]
 
@@ -23,15 +29,42 @@ module Democratech
 		end
 
 		resource :mailchimp do
+			helpers do
+				def authorized
+					params['HandshakeKey']==WUFHS
+				end
+			end
+
+			get 'subscriber' do
+				# only required for mailchimp url validator
+			end
+
 			post 'subscriber' do
-				puts params
+				# update the city of a subscriber when a subscriber is added
+				if params["data[merges][CITY]"].empty? and not params["data[merges][ZIPCODE]"].empty? then
+					zip=params["data[merges][ZIPCODE]"].strip.gsub(/\s+/,"")
+					if not zip.match('^[0-9]{5}(?:-[0-9]{4})?$').nil? then
+						commune=$communes.find({"postalCode"=>zip}).first
+						if not commune.nil? then
+							uri = URI.parse(MCURL)
+							http = Net::HTTP.new(uri.host, uri.port)
+							http.use_ssl = true
+							http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+							request = Net::HTTP::Patch.new("/3.0/lists/"+MCLIST+"/members/"+id)
+							request.basic_auth 'hello',MCKEY
+							request.add_field('Content-Type', 'application/json')
+							request.body = member
+							http.request(request)
+						end
+					end
+				end
 			end
 		end
 
 		resource :wufoo do
 			helpers do
 				def authorized
-					params['HandshakeKey']=='DemocratechForTheWin'
+					params['HandshakeKey']==WUFHS
 				end
 			end
 			post 'entry' do
