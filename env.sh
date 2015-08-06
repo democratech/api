@@ -1,0 +1,8 @@
+export DBURL="mongodb://XXXXX"
+export MCKEY="XXXXXXXXXXXXXXXXXXXXXXXXXXX"
+export MCURL="https://XXXXX.api.mailchimp.com"
+export MCLIST="XXXXXXXXXX"
+export WUFHS="XXXXXXXXXXXXXXXX"
+export MCFHS="XXXXXXXXXXXXXXXX"
+export SLCKHOST="https://hooks.slack.com"
+export SLCKPATH="/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
