@@ -27,7 +27,7 @@ end
 
 if $0 == __FILE__ then
 	server = WEBrick::HTTPServer.new(:Port => ENV['API_PORT'])
-	server.mount "/", Algorun
+	server.mount "/", API
 	trap("INT") {
 		server.shutdown
 	}
