@@ -1,3 +1,4 @@
+export DEMOCRATECH_HOME="/path/to/democratech/"
 export DBURL="mongodb://XXXXX"
 export MCKEY="XXXXXXXXXXXXXXXXXXXXXXXXXXX"
 export MCURL="https://XXXXX.api.mailchimp.com"
