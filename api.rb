@@ -31,12 +31,6 @@ module Democratech
 			end
 		end
 
-		resource :front do
-			http_basic do |u,p|
-				u=='democratech' && p== 'toto'
-			end
-		end
-
 		resource :mailchimp do
 			helpers do
 				def authorized
@@ -46,7 +40,6 @@ module Democratech
 
 			get 'subscriber' do
 				# only required for mailchimp url validator
-				API.db[:communes].find({:postalCode=>'67210'}).first
 			end
 
 			post 'subscriber' do
