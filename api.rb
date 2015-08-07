@@ -1,21 +1,10 @@
 require 'grape'
+require 'json'
 require 'mongo'
 require 'bson'
-require 'json'
 require 'time'
 require 'net/http'
 require 'uri'
-
-Mongo::Logger.logger.level = Logger::WARN
-
-DBURL = ENV['DBURL']
-MCKEY = ENV['MCKEY']
-MCURL = ENV['MCURL']
-MCLIST = ENV['MCLIST']
-MCFHS = ENV['MCFHS']
-WUFHS = ENV['WUFHS']
-SLCKHOST = ENV['SLCKHOST']
-SLCKPATH = ENV['SLCKPATH']
 
 module Democratech
 	class API < Grape::API
@@ -173,6 +162,3 @@ module Democratech
 		end
 	end
 end
-
-Democratech::API.db=Mongo::Client.new(DBURL)
-

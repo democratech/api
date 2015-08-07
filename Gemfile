@@ -1,4 +1,5 @@
 source 'https://rubygems.org'
-gem "grape"
-gem "mongo"
-gem "bson_ext"
+gem 'grape', '0.12.0'
+gem 'mongo', '~> 2.0.6'
+gem 'bson', '~> 3.0'
+gem 'unicorn', '4.7.0'
