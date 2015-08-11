@@ -17,3 +17,9 @@ Make sure you create a ```config/keys.local.rb``` file with all the necessary in
 ```
 bundle exec unicorn -c config/unicorn.conf.rb config/config.ru
 ```
+
+Alternatively for development purposes, you can also just run the API with:
+```
+rackup config/config.ru
+```
+This will use the default WEBRick web server.
