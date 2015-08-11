@@ -21,7 +21,7 @@ worker_processes 4
 
 # Help ensure your application will always spawn in the symlinked
 # "current" directory that Capistrano sets up.
-working_directory ENV['DEMOCRATECH_HOME']+"/api" # available in 0.94.0+
+working_directory "/home/democratech/api" # available in 0.94.0+
 
 # listen on both a Unix domain socket and a TCP port,
 # we use a shorter backlog for quicker failover when busy
@@ -36,5 +36,5 @@ pid "/tmp/unicorn.pid"
 # By default, the Unicorn logger will write to stderr.
 # Additionally, ome applications/frameworks log to stderr or stdout,
 # so prevent them from going to /dev/null when daemonized here:
-stderr_path ENV['DEMOCRATECH_HOME']+"/api/log/unicorn.stderr.log"
-stdout_path ENV['DEMOCRATECH_HOME']+"/api/log/unicorn.stdout.log"
+stderr_path "/home/democratech/api/log/unicorn.stderr.log"
+stdout_path "/home/democratech/api/log/unicorn.stdout.log"
