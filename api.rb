@@ -70,7 +70,7 @@ module Democratech
 						'merge_fields'=>merge_fields
 					})
 					res=http.request(request)
-					return res.kind_of? Net::HTTPSuccess,res
+					return res.kind_of?(Net::HTTPSuccess),res
 				end
 			end
 
@@ -89,7 +89,7 @@ module Democratech
 				doc[:city]=params["Field130"].upcase unless params["Field130"].nil?
 				doc[:reason]=params["Field119"] unless params["Field119"].nil?
 				doc[:created]=Time.now.utc
-				if doc[:city].nil? and not doc[:postalCode].nil? then
+				if doc[:city].to_s.empty? and not doc[:postalCode].to_s.empty? then
 					commune=API.db[:communes].find({:postalCode=>doc[:postalCode]}).first
 					doc[:city]=commune['name'] unless commune.nil?
 				end
@@ -173,7 +173,6 @@ module Democratech
 					:lastUpdated=>Time.now.utc
 				}
 				supporter=API.db[:supporteurs].find({:email=>email}).find_one_and_update({'$set'=>update}) # returns the document found
-				mailchimp_id=supporter['mailchimp_id']
 
 				# 3. if no supporter was found then we register him (can be the case if the contributor did not sign the initial form)
 				if supporter.nil? then
@@ -182,7 +181,7 @@ module Democratech
 					insert_res=API.db[:supporteurs].insert_one(update)
 					if insert_res.n==1 then
 						notifs.push([
-							"Nouveau supporteur ET contributeur !\nDispo: %s\nTags: %s\nNote: %s" % [update[:dispo],tags.inspect,note],
+							"Nouveau supporteur ET contributeur ! Dispo: %s, Tags: %s, Message: %s" % [update[:dispo],tags.inspect,note],
 							"#supporteurs",
 							":muscle:"
 						])
@@ -215,20 +214,21 @@ module Democratech
 					end
 
 				else
+					mailchimp_id=supporter['mailchimp_id']
 					notifs.push([
-						"Nouveau contributeur !\nDispo: %s\nTags: %s\nNote: %s" % [update[:dispo],tags.inspect,note],
+						"Nouveau contributeur ! Dispo: %s, Tags: %s, Message: %s" % [update[:dispo],tags.join(","),note],
 						"#supporteurs",
 						":muscle:"
 					])
 				end
 
 				# 5. We retrieve the groups of the mailchimp mailing list and match them to the tags of the contributor
-				if not mailchimp_id.nil? and not mailchimp_id.empty? then
+				if not mailchimp_id.to_s.empty? then
 					uri = URI.parse(MCURL)
 					http = Net::HTTP.new(uri.host, uri.port)
 					http.use_ssl = true
 					http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-					request = Net::HTTP::Get.new("/3.0/lists/"+MCLIST+"/interest-categories/"+MCGROUPCAT+"/interests")
+					request = Net::HTTP::Get.new("/3.0/lists/"+MCLIST+"/interest-categories/"+MCGROUPCAT+"/interests?count=100&offset=0")
 					request.basic_auth 'hello',MCKEY
 					res=http.request(request)
 					response=JSON.parse(res.body)["interests"]
@@ -255,7 +255,7 @@ module Democratech
 					res=http.request(request)
 					if res.kind_of? Net::HTTPSuccess then
 						notifs.push([
-							"Supporter mis a jour dans mailchimp. Tags: %s" % [tags.inspect],
+							"Supporter mis a jour dans mailchimp. Tags: %s" % [tags.join(",")],
 							"#supporteurs",
 							":monkey_face:"
 						])
