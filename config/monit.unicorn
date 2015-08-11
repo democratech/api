@@ -1,0 +1,41 @@
+ check process unicorn with pidfile /var/run/unicorn/api.democratech/pid every 5 cycles
+   group www
+   group nginx
+   start program = "/etc/init.d/unicorn start"
+   stop program = "/etc/init.d/unicorn stop"
+   if failed port 9292 protocol http request "/api/v1/test" for 2 cycles then restart
+   if 2 restarts with 2 cycles then timeout
+   alert sysadmin@democratech.co on {timeout}
+
+
+check process unicorn_worker_0 with pidfile /var/run/unicorn/api.democratech/worker.0.pid
+  alert sysadmin@democratech.co only on { pid }
+  if changed pid 2 times within 60 cycles then alert
+  if memory usage > 20% for 1 cycles then
+    exec "/etc/init.d/unicorn kill_worker 0"
+  if cpu is greater than 50% for 2 cycles then
+    exec "/etc/init.d/unicorn kill_worker 0"
+
+check process unicorn_worker_1 with pidfile /var/run/unicorn/api.democratech/worker.1.pid
+  alert sysadmin@democratech.co only on { pid }
+  if changed pid 2 times within 60 cycles then alert
+  if memory usage > 20% for 1 cycles then
+    exec "/etc/init.d/unicorn kill_worker 1"
+  if cpu is greater than 50% for 2 cycles then
+    exec "/etc/init.d/unicorn kill_worker 1"
+
+check process unicorn_worker_2 with pidfile /var/run/unicorn/api.democratech/worker.2.pid
+  alert sysadmin@democratech.co only on { pid }
+  if changed pid 2 times within 60 cycles then alert
+  if memory usage > 20% for 1 cycles then
+    exec "/etc/init.d/unicorn kill_worker 2"
+  if cpu is greater than 50% for 2 cycles then
+    exec "/etc/init.d/unicorn kill_worker 2"
+
+check process unicorn_worker_3 with pidfile /var/run/unicorn/api.democratech/worker.3.pid
+  alert sysadmin@democratech.co only on { pid }
+  if changed pid 2 times within 60 cycles then alert
+  if memory usage > 20% for 1 cycles then
+    exec "/etc/init.d/unicorn kill_worker 3"
+  if cpu is greater than 50% for 2 cycles then
+    exec "/etc/init.d/unicorn kill_worker 3"

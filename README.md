@@ -13,7 +13,7 @@ Nevertheless, we needed a little API of our own in order to properly synchronize
 The API is written in Ruby and leverages the [Grape API framework](https://github.com/ruby-grape/grape).
 The Webserver used is [Unicorn](http://unicorn.bogomips.org/) (behing nginx).
 
-Make sure you run ```env.sh``` before launching the unicorn server with the following command:
+Make sure you create a ```config/keys.local.rb``` file with all the necessary information (cf ```config/keys.rb```) and then launch the unicorn server with the following command:
 ```
-bundle exec unicorn -c unicorn.conf.rb
+bundle exec unicorn -c config/unicorn.conf.rb config/config.ru
 ```
