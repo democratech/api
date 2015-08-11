@@ -44,6 +44,11 @@ module Democratech
 			end
 		end
 
+		get 'test' do
+			# DO NOT DELETE used to test the api is live
+			puts "OK"
+		end
+
 		resource :wufoo do
 			helpers do
 				def authorized
