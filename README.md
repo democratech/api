@@ -1,4 +1,4 @@
-![democratech logo](https://democratech.co/static/logo-dark-trbg-260x40.png)
+![democratech logo](http://democratech.co/static/logo-dark-trbg-260x40.png)
 # API
 
 ## Context
@@ -16,10 +16,10 @@ Nevertheless, we needed an API of ours (Zapier-like) to properly synchronize all
 
 The API is located on the green "Supporteurs" node.
 ### Citizen signing process
-![Citizen subscription process](https://democratech.co/static/citizen_signing_process.png)
+![Citizen subscription process](http://democratech.co/static/citizen_signing_process.png)
 
 ### Citizen contributing process
-![Citizen contributing process](https://democratech.co/static/citizen_contributing_process.png)
+![Citizen contributing process](http://democratech.co/static/citizen_contributing_process.png)
 
 ## About the API
 
