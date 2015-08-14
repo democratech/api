@@ -1,5 +1,5 @@
 ![democratech logo](http://democratech.co/static/logo-dark-trbg-260x40.png)
-# API
+# Services API
 
 ## Context
 
@@ -14,19 +14,19 @@ Nevertheless, we needed an API of ours (Zapier-like) to properly synchronize all
 
 ## Process overview
 
-The API is located on the green "Supporteurs" node.
+The services API is located on the green "Supporteurs" node.
 ### Citizen signing process
 ![Citizen subscription process](http://democratech.co/static/citizen_signing_process.png)
 
 ### Citizen contributing process
 ![Citizen contributing process](http://democratech.co/static/citizen_contributing_process.png)
 
-## About the API
+## About the Services API
 
-The API is written in Ruby and leverages the [Grape API framework](https://github.com/ruby-grape/grape).
+The Services API is written in Ruby and leverages the [Grape API framework](https://github.com/ruby-grape/grape).
 The Webserver used is [Unicorn](http://unicorn.bogomips.org/) (behing nginx).
 
-## Installing and starting the API
+## Installing and starting the Services API
 
 1. Make sure your run ```bundle install``` to make sure all dependencies get installed
 2. Create a ```config/keys.local.rb``` file with all the necessary information (cf ```config/keys.rb```)
@@ -35,15 +35,36 @@ The Webserver used is [Unicorn](http://unicorn.bogomips.org/) (behing nginx).
 bundle exec unicorn -c config/unicorn.conf.rb config/config.ru
 ```
 
-Alternatively for development purposes, you can also just run the API with rackup to use the default WEBRick web server:
+Alternatively for development purposes, you can also just run the Services API with rackup to use the default WEBRick web server:
 ```
 rackup config/config.ru
 ```
 
-## Accessing the API
+## Accessing the Services API
 
-You can test that the API is up and running by calling:
+You can test that the Services API is up and running by calling:
 ```
 curl http://127.0.0.1:9292/api/v1/test
 ```
 It should return an HTTP 200 OK
+
+## Contributing
+
+1. [Fork it](http://github.com/democratech/api/fork)
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create a new Pull Request
+
+## Authors
+
+So far, democratech's Services API is being developed and maintained by
+* [Thibauld Favre](https://twitter.com/thibauld)
+* [Jean-Tristan Chanègue](https://www.linkedin.com/in/jeantristanchanegue)
+* Feel free to join us! 
+
+## License
+
+* democratech Services API is released under the [GNU Affero GPL](https://github.com/democratech/website/blob/master/LICENSE)
+* Grape is released under a [Free Software license](https://github.com/ruby-grape/grape/blob/master/LICENSE).
+
