@@ -1,4 +1,7 @@
-# democratech API
+![democratech logo](https://democratech.co/static/logo-dark-trbg-260x40.png)
+# API
+
+## Context
 
 In order not to require extensive coding resources for coding websites, democratech makes an extensive use of web services behind the scene, most notably:
 * [Bime](https://bimeanalytics.com) for analytics and dashboards
@@ -6,20 +9,41 @@ In order not to require extensive coding resources for coding websites, democrat
 * [Wufoo](https://wufoo.com) for forms
 * [Slack](https://slack.com) for communication / notifications
 * [Mailchimp](https://mailchimp.com) for emailing
-* [Zapier](https://zapier.com) for inter-API connections
 
-Nevertheless, we needed a little API of our own in order to properly synchronize all those services.
+Nevertheless, we needed an API of ours (Zapier-like) to properly synchronize all those services.
+
+## Process overview
+
+The API is located on the green "Supporteurs" node.
+### Citizen signing process
+![Citizen subscription process](https://democratech.co/static/citizen_signing_process.png)
+
+### Citizen contributing process
+![Citizen contributing process](https://democratech.co/static/citizen_contributing_process.png)
+
+## About the API
 
 The API is written in Ruby and leverages the [Grape API framework](https://github.com/ruby-grape/grape).
 The Webserver used is [Unicorn](http://unicorn.bogomips.org/) (behing nginx).
 
-Make sure you create a ```config/keys.local.rb``` file with all the necessary information (cf ```config/keys.rb```) and then launch the unicorn server with the following command:
+## Installing and starting the API
+
+1. Make sure your run ```bundle install``` to make sure all dependencies get installed
+2. Create a ```config/keys.local.rb``` file with all the necessary information (cf ```config/keys.rb```)
+3. launch the unicorn server with the following command:
 ```
 bundle exec unicorn -c config/unicorn.conf.rb config/config.ru
 ```
 
-Alternatively for development purposes, you can also just run the API with:
+Alternatively for development purposes, you can also just run the API with rackup to use the default WEBRick web server:
 ```
 rackup config/config.ru
 ```
-This will use the default WEBRick web server.
+
+## Accessing the API
+
+You can test that the API is up and running by calling:
+```
+curl http://127.0.0.1:9292/api/v1/test
+```
+It should return an HTTP 200 OK
