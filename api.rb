@@ -41,9 +41,9 @@ module Democratech
 					icon=n[2] || ":warning:"
 					from=n[3] || "democratech"
 					if channels[chann].nil? then
-						channels[chann]="%s [%s] %s" % [icon,from,msg]
+						channels[chann]="%s *%s* %s" % [icon,from,msg]
 					else
-						channels[chann]+="\n%s [%s] %s" % [icon,from,msg]
+						channels[chann]+="\n%s *%s* %s" % [icon,from,msg]
 					end
 				end
 				channels.each do |k,v|
@@ -54,7 +54,6 @@ module Democratech
 
 		get 'test' do
 			# DO NOT DELETE used to test the api is live
-			puts "OK"
 		end
 
 		resource :wufoo do
@@ -219,7 +218,7 @@ module Democratech
 						# we retrieve the subscriber ID from the newly created mailchimp entry
 						mailchimp_id=JSON.parse(res.body)["id"]
 						notifs.push([
-							"Enregistrement d'un nouveau supporteur !"
+							"Enregistrement d'un nouveau supporteur !",
 							"#supporteurs",
 							":monkey_face:",
 							"mailchimp"
