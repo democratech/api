@@ -34,12 +34,20 @@ module Democratech
 			end
 
 			def slack_notifications(notifs)
+				channels={}
 				notifs.each do |n|
 					msg=n[0] || ""
-					chann=n[1] || "#supporteurs"
-					icon=n[2] || ":ghost:"
+					chann=n[1] || "#errors"
+					icon=n[2] || ":warning:"
 					from=n[3] || "democratech"
-					slack_notification(msg,chann,icon,from)
+					if channels[chann].nil? then
+						channels[chann]="%s [%s] %s" % [icon,from,msg]
+					else
+						channels[chann]+="\n%s [%s] %s" % [icon,from,msg]
+					end
+				end
+				channels.each do |k,v|
+					slack_notification(v,k,":bell:","democratech")
 				end
 			end
 		end
@@ -105,15 +113,17 @@ module Democratech
 					# we retrieve the subscriber ID from the newly created mailchimp entry
 					mailchimp_id=JSON.parse(res.body)["id"]
 					notifs.push([
-						"Enregistrement du nouveau supporteur (%s %s) sur mailchimp OK !" % [doc[:firstName],doc[:lastName]],
+						"Enregistrement du nouveau supporteur (%s %s) OK !" % [doc[:firstName],doc[:lastName]],
 						"#supporteurs",
-						":monkey_face:"
+						":monkey_face:",
+						"mailchimp"
 					])
 				else
 					notifs.push([
-						"Erreur lors de l'enregistrement d'un nouveau supporteur sur mailchimp ! [CODE: %s]" % [res.code],
+						"Erreur lors de l'enregistrement d'un nouveau supporteur ! [CODE: %s]" % [res.code],
 						"#errors",
-						":speak_no_evil:"
+						":speak_no_evil:",
+						"mailchimp"
 					])
 					errors.push('400 Supporter could not be subscribed')
 				end
@@ -125,13 +135,15 @@ module Democratech
 					notifs.push([
 						"Nouveau supporteur ! %s %s (%s, %s, %s) : %s" % [doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:country],doc[:reason]],
 						"#supporteurs",
-						":thumbsup:"
+						":thumbsup:",
+						"mongodb"
 					])
 				else # if the supporter could not be insert in the db
 					notifs.push([
 						"Erreur lors de l'enregistrement d'un nouveau supporteur: %s ! %s %s (%s, %s, %s) : %s\nError msg: %s\nError trace: %s" % [doc[:email],doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:country],doc[:reason],insert_res.inspect],
 						"#errors",
-						":scream:"
+						":scream:",
+						"mongodb"
 					])
 					errors.push('400 Supporter could not be registered')
 				end
@@ -188,13 +200,15 @@ module Democratech
 						notifs.push([
 							"Nouveau supporteur ET contributeur ! Dispo: %s, Tags: %s, Message: %s" % [update[:dispo],tags.inspect,note],
 							"#supporteurs",
-							":muscle:"
+							":muscle:",
+							"mongodb"
 						])
 					else
 						notifs.push([
 							"Erreur lors de l'enregistrement d'un nouveau contributeur !\nEmail: %s\nDispo: %s\nTags: %s\nError msg: %s" % [email,update[:dispo],tags.inspect,insert_res.inspect],
 							"#errors",
-							":fearful:"
+							":fearful:",
+							"mongodb"
 						])
 						errors.push('400 Contributor not registered and cannot be registered')
 					end
@@ -205,15 +219,17 @@ module Democratech
 						# we retrieve the subscriber ID from the newly created mailchimp entry
 						mailchimp_id=JSON.parse(res.body)["id"]
 						notifs.push([
-							"Enregistrement d'un nouveau supporteur sur mailchimp !",
+							"Enregistrement d'un nouveau supporteur !"
 							"#supporteurs",
-							":monkey_face:"
+							":monkey_face:",
+							"mailchimp"
 						])
 					else
 						notifs.push([
-							"Erreur lors de l'enregistrement d'un nouveau supporteur sur mailchimp ! [CODE: %s]" % [res.code],
+							"Erreur lors de l'enregistrement d'un nouveau supporteur ! [CODE: %s]" % [res.code],
 							"#errors",
-							":speak_no_evil:"
+							":speak_no_evil:",
+							"mailchimp"
 						])
 						errors.push('400 New supporter could not be subscribed')
 					end
@@ -223,7 +239,8 @@ module Democratech
 					notifs.push([
 						"Nouveau contributeur ! Dispo: %s, Tags: %s, Message: %s" % [update[:dispo],tags.join(","),note],
 						"#supporteurs",
-						":muscle:"
+						":muscle:",
+						"mongodb"
 					])
 				end
 
@@ -260,15 +277,17 @@ module Democratech
 					res=http.request(request)
 					if res.kind_of? Net::HTTPSuccess then
 						notifs.push([
-							"Supporter mis a jour dans mailchimp. Tags: %s" % [tags.join(",")],
+							"Supporter mis a jour. Tags: %s" % [tags.join(",")],
 							"#supporteurs",
-							":monkey_face:"
+							":monkey_face:",
+							"mailchimp"
 						])
 					else
 						notifs.push([
-							"Erreur lors de la mise a jour du supporter dans mailchimp. Tags: %s" % [tags.inspect],
+							"Erreur lors de la mise a jour du supporter. Tags: %s" % [tags.inspect],
 							"#errors",
-							":speak_no_evil:"
+							":speak_no_evil:",
+							"mailchimp"
 						])
 						errors.push('400 Supporter could not be updated in mailchimp')
 					end
