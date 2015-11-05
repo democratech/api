@@ -1,4 +1,6 @@
 DBURL="mongodb://XXX"
+MGUNKEY="key-GGGGGGGGG"
+MGUNDOMAIN="my.domain.com"
 MCKEY="XXXXXXXXX-TTTT"
 MCURL="https://TTTT.api.mailchimp.com"
 MCLIST="UUUUUUUU"
