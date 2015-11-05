@@ -56,6 +56,12 @@ module Democratech
 			# DO NOT DELETE used to test the api is live
 		end
 
+		resource :stripe do
+			post 'donation' do
+				puts params
+			end
+		end
+
 		resource :wufoo do
 			helpers do
 				def authorized
