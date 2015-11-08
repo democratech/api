@@ -4,6 +4,14 @@ require APP_ROOT+'/config/keys.local.rb'
 require APP_ROOT+'/api.rb'
 require 'unicorn'
 require 'stripe'
+require 'rack/cors'
+
+use Rack::Cors do
+	allow do
+		origins '*'
+		resource '*', headers: :any, methods: :get
+	end
+end
 
 Mongo::Logger.logger.level = Logger::WARN
 Democratech::API.mg_client=Mailgun::Client.new(MGUNKEY)

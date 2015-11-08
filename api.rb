@@ -1,4 +1,4 @@
-# encoding: utf-8
+e encoding: utf-8
 require 'grape'
 require 'json'
 require 'mongo'
@@ -59,6 +59,13 @@ module Democratech
 		end
 
 		resource :stripe do
+			get 'total' do
+				res=API.db['donateurs'].find.aggregate([{"$group"=>{_id: nil, total: {"$sum"=> "$amount"}}}]).first
+				total_amount=res['total'].to_i
+				nb_donateurs=API.db['donateurs'].find().count
+				return {"total"=>total_amount,"nb_donateurs"=>nb_donateurs}
+			end
+
 			post 'donate' do
 				errors=[]
 				notifs=[]
@@ -121,7 +128,7 @@ module Democratech
 					:text    => message
 				}
 				API.mg_client.send_message(MGUNDOMAIN, message_params)
-				redirect "/thankyou/"
+				redirect "https://laprimaire.org/merci/"
 				if not errors.empty? then
 					error!(errors.join("\n"),400)
 				end
@@ -223,6 +230,54 @@ module Democratech
 					})
 					res=http.request(request)
 					return res.kind_of?(Net::HTTPSuccess),res
+				end
+			end
+
+			post 'presse' do
+				error!('401 Unauthorized', 401) unless authorized
+				errors=[]
+				notifs=[]
+				# 1. We read the new supporter info from the parameters
+				doc={}
+				doc[:firstName]=params["Field1"].capitalize unless params["Field1"].nil?
+				doc[:lastName]=params["Field2"].upcase unless params["Field2"].nil?
+				doc[:societe]=params["Field11"]
+				doc[:email]=params["Field4"].downcase unless params["Field4"].nil?
+				doc[:tel]=params["Field114"] unless params["Field114"].nil?
+				doc[:msg]=params["Field5"]
+				doc[:abo]=params["Field112"]
+				notifs.push([
+					"Nouveau contact presse reçu !\nPrénom : %s\nNom : %s\nSociété : %s\nEmail : %s\nTel : %s\nAbonnement : %s\nMessage : %s" % [doc[:firstName],doc[:lastName],doc[:societe],doc[:email],doc[:tel],doc[:abo],doc[:msg]],
+					"#contact",
+					":newspaper:",
+					"wufoo"
+				])
+				slack_notifications(notifs)
+				if not errors.empty? then
+					error!(errors.join("\n"),400)
+				end
+			end
+
+			post 'contact' do
+				error!('401 Unauthorized', 401) unless authorized
+				errors=[]
+				notifs=[]
+				# 1. We read the new supporter info from the parameters
+				doc={}
+				doc[:firstName]=params["Field1"].capitalize unless params["Field1"].nil?
+				doc[:lastName]=params["Field2"].upcase unless params["Field2"].nil?
+				doc[:objet]=params["Field9"]
+				doc[:msg]=params["Field5"]
+				doc[:type]=params["Field11"]
+				notifs.push([
+					"Nouveau message reçu (dans Front) via le formulaire de contact !\nPrénom : %s\nNom : %s\nObjet : %s\nType : %s\nMessage : %s" % [doc[:firstName],doc[:lastName],doc[:objet],doc[:type],doc[:msg]],
+					"#contact",
+					":mailbox:",
+					"wufoo"
+				])
+				slack_notifications(notifs)
+				if not errors.empty? then
+					error!(errors.join("\n"),400)
 				end
 			end
 
