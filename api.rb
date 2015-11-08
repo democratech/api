@@ -89,7 +89,8 @@ module Democratech
 				doc[:from]="stripe"
 				donateur = Stripe::Customer.create(
 					:source => token,
-					:description => "Donateur LaPrimaire.org"
+					:description => "%s %s - Donateur LaPrimaire.org" % [firstName, lastName],
+					:email => doc[:email]
 				)
 				doc[:donateur_id]=donateur.id
 				Stripe::Charge.create(
