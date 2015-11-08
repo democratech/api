@@ -1,4 +1,4 @@
-e encoding: utf-8
+# encoding: utf-8
 require 'grape'
 require 'json'
 require 'mongo'
@@ -86,6 +86,7 @@ module Democratech
 				doc[:postalCode]=params[:stripeBillingAddressZip]
 				doc[:country]=params[:stripeBillingAddressCountry].upcase unless params[:stripeBillingAddressCountry].nil?
 				doc[:tags]=["financeur"]
+				doc[:from]="stripe"
 				donateur = Stripe::Customer.create(
 					:source => token,
 					:description => "Donateur LaPrimaire.org"
