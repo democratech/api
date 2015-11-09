@@ -96,7 +96,9 @@ module Democratech
 				Stripe::Charge.create(
 					:amount => params[:don], # in cents
 					:currency => "eur",
-					:customer => donateur.id
+					:customer => donateur.id,
+					:description => "Don pour LaPrimaire.org. Merci beaucoup !",
+					:receipt_email => doc[:email]
 				)
 				doc[:amount]=params[:don].to_s.insert(-3,".").to_f
 				insert_res=API.db[:donateurs].insert_one(doc)
