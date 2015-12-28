@@ -58,6 +58,13 @@ module Democratech
 			# DO NOT DELETE used to test the api is live
 		end
 
+		resource :supporteurs do
+			get 'total' do
+				nb_supporteurs=API.db[:supporteurs].find().count
+				return {"total"=>nb_supporteurs}
+			end
+		end
+
 		resource :stripe do
 			get 'total' do
 				res=API.db['donateurs'].find.aggregate([{"$group"=>{_id: nil, total: {"$sum"=> "$amount"}}}]).first
