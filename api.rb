@@ -61,7 +61,7 @@ module Democratech
 		resource :supporteurs do
 			get 'total' do
 				nb_supporteurs=API.db[:supporteurs].find().count
-				return {"total"=>nb_supporteurs}
+				return {"nb_supporteurs"=>nb_supporteurs}
 			end
 		end
 
