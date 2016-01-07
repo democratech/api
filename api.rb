@@ -17,7 +17,7 @@ module Democratech
 		end
 
 		helpers do
-			def slack_notification(msg,channel="#supporteurs",icon=":ghost:",from="democratech")
+			def slack_notification(msg,channel="supporteurs",icon=":ghost:",from="democratech")
 				uri = URI.parse(SLCKHOST)
 				http = Net::HTTP.new(uri.host, uri.port)
 				http.use_ssl = true
@@ -39,7 +39,7 @@ module Democratech
 				channels={}
 				notifs.each do |n|
 					msg=n[0] || ""
-					chann=n[1] || "#errors"
+					chann=n[1] || "errors"
 					icon=n[2] || ":warning:"
 					from=n[3] || "democratech"
 					if channels[chann].nil? then
@@ -112,14 +112,14 @@ module Democratech
 				if insert_res.n==1 then
 					notifs.push([
 						"Nouveau donateur enregistré ! %s %s (%s, %s) : %s %s" % [doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:amount].to_s,doc[:currency]],
-						"#crowdfunding",
+						"crowdfunding",
 						":thumbsup:",
 						"mongodb"
 					])
 				else # if the donator could not be insert in the db
 					notifs.push([
 						"Erreur lors de l'enregistrement d'un nouveau donateur: %s ! %s %s (%s, %s) : %s %s\nError trace: %s" % [doc[:email],doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:amount].to_s,doc[:currency],insert_res.inspect],
-						"#errors",
+						"errors",
 						":scream:",
 						"mongodb"
 					])
@@ -127,7 +127,7 @@ module Democratech
 				end
 				notifs.push([
 					"nouvelle donation de %s de %s (%s) : %s %s" % [name,doc[:city],doc[:postalCode],doc[:amount].to_s,doc[:currency]],
-					"#crowdfunding",
+					"crowdfunding",
 					":moneybag:",
 					"stripe"
 				])
@@ -178,14 +178,14 @@ module Democratech
 							if insert_res.n==1 then
 								notifs.push([
 									"Nouveau donateur enregistré ! %s %s (%s, %s) : %s %s" % [doc[:firstname],doc[:lastname],doc[:zip],doc[:city],doc[:amount],doc[:currency]],
-									"#crowdfunding",
+									"crowdfunding",
 									":thumbsup:",
 									"mongodb"
 								])
 							else # if the donator could not be insert in the db
 								notifs.push([
 									"Erreur lors de l'enregistrement d'un nouveau donateur: %s ! %s %s (%s, %s) : %s %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:zip],doc[:city],doc[:amount],doc[:currency],insert_res.inspect],
-									"#errors",
+									"errors",
 									":scream:",
 									"mongodb"
 								])
@@ -193,7 +193,7 @@ module Democratech
 							end
 							notifs.push([
 								"nouvelle donation de %s de %s (%s) : %s %s" % [name,city,zip,amount,curr],
-								"#crowdfunding",
+								"crowdfunding",
 								":credit_card:",
 								"stripe"
 							])
@@ -259,7 +259,7 @@ module Democratech
 				doc[:abo]=params["Field112"]
 				notifs.push([
 					"Nouveau contact presse reçu !\nPrénom : %s\nNom : %s\nSociété : %s\nEmail : %s\nTel : %s\nAbonnement : %s\nMessage : %s" % [doc[:firstName],doc[:lastName],doc[:societe],doc[:email],doc[:tel],doc[:abo],doc[:msg]],
-					"#contact",
+					"contact",
 					":newspaper:",
 					"wufoo"
 				])
@@ -282,7 +282,7 @@ module Democratech
 				doc[:type]=params["Field11"]
 				notifs.push([
 					"Nouveau message reçu (dans Front) via le formulaire de contact !\nPrénom : %s\nNom : %s\nObjet : %s\nType : %s\nMessage : %s" % [doc[:firstName],doc[:lastName],doc[:objet],doc[:type],doc[:msg]],
-					"#contact",
+					"contact",
 					":mailbox:",
 					"wufoo"
 				])
@@ -319,14 +319,14 @@ module Democratech
 					mailchimp_id=JSON.parse(res.body)["id"]
 					notifs.push([
 						"Enregistrement du nouveau supporteur (%s %s) OK !" % [doc[:firstName],doc[:lastName]],
-						"#supporteurs",
+						"supporteurs",
 						":monkey_face:",
 						"mailchimp"
 					])
 				else
 					notifs.push([
 						"Erreur lors de l'enregistrement d'un nouveau supporteur ! [CODE: %s]" % [res.code],
-						"#errors",
+						"errors",
 						":speak_no_evil:",
 						"mailchimp"
 					])
@@ -339,14 +339,14 @@ module Democratech
 				if insert_res.n==1 then
 					notifs.push([
 						"Nouveau supporteur ! %s %s (%s, %s, %s) : %s" % [doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:country],doc[:reason]],
-						"#supporteurs",
+						"supporteurs",
 						":thumbsup:",
 						"mongodb"
 					])
 				else # if the supporter could not be insert in the db
 					notifs.push([
 						"Erreur lors de l'enregistrement d'un nouveau supporteur: %s ! %s %s (%s, %s, %s) : %s\nError msg: %s\nError trace: %s" % [doc[:email],doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:country],doc[:reason],insert_res.inspect],
-						"#errors",
+						"errors",
 						":scream:",
 						"mongodb"
 					])
@@ -404,14 +404,14 @@ module Democratech
 					if insert_res.n==1 then
 						notifs.push([
 							"Nouveau supporteur ET contributeur ! Dispo: %s, Tags: %s, Message: %s" % [update[:dispo],tags.inspect,note],
-							"#supporteurs",
+							"supporteurs",
 							":muscle:",
 							"mongodb"
 						])
 					else
 						notifs.push([
 							"Erreur lors de l'enregistrement d'un nouveau contributeur !\nEmail: %s\nDispo: %s\nTags: %s\nError msg: %s" % [email,update[:dispo],tags.inspect,insert_res.inspect],
-							"#errors",
+							"errors",
 							":fearful:",
 							"mongodb"
 						])
@@ -425,14 +425,14 @@ module Democratech
 						mailchimp_id=JSON.parse(res.body)["id"]
 						notifs.push([
 							"Enregistrement d'un nouveau supporteur !",
-							"#supporteurs",
+							"supporteurs",
 							":monkey_face:",
 							"mailchimp"
 						])
 					else
 						notifs.push([
 							"Erreur lors de l'enregistrement d'un nouveau supporteur ! [CODE: %s]" % [res.code],
-							"#errors",
+							"errors",
 							":speak_no_evil:",
 							"mailchimp"
 						])
@@ -443,7 +443,7 @@ module Democratech
 					mailchimp_id=supporter['mailchimp_id']
 					notifs.push([
 						"Nouveau contributeur ! Dispo: %s, Tags: %s, Message: %s" % [update[:dispo],tags.join(","),note],
-						"#supporteurs",
+						"supporteurs",
 						":muscle:",
 						"mongodb"
 					])
@@ -483,14 +483,14 @@ module Democratech
 					if res.kind_of? Net::HTTPSuccess then
 						notifs.push([
 							"Supporter mis a jour. Tags: %s" % [tags.join(",")],
-							"#supporteurs",
+							"supporteurs",
 							":monkey_face:",
 							"mailchimp"
 						])
 					else
 						notifs.push([
 							"Erreur lors de la mise a jour du supporter. Tags: %s" % [tags.inspect],
-							"#errors",
+							"errors",
 							":speak_no_evil:",
 							"mailchimp"
 						])
