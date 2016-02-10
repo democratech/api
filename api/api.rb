@@ -1,14 +1,4 @@
 # encoding: utf-8
-require 'grape'
-require 'json'
-require 'mongo'
-require 'bson'
-require 'time'
-require 'net/http'
-require 'uri'
-require_relative 'wufoo_v1'
-require_relative 'stripe_v1'
-require_relative 'supporteurs_v1'
 
 module Democratech
 	class API < Grape::API
@@ -20,7 +10,7 @@ module Democratech
 
 		get do
 			# DO NOT DELETE used to test the api is live
-			return {"api_version"=>['v1','v2']}
+			return {"api"=>"ok"}
 		end
 
 		helpers do
@@ -61,8 +51,9 @@ module Democratech
 			end
 		end
 
-		mount Democratech::SupporteursV1
-		mount Democratech::StripeV1
-		mount Democratech::WufooV1
+		mount ::Democratech::WufooV2
+		mount ::Democratech::SupporteursV1
+		mount ::Democratech::StripeV1
+		mount ::Democratech::WufooV1
 	end
 end

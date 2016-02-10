@@ -1,10 +1,4 @@
-APP_ROOT = File.expand_path(File.dirname(File.dirname(__FILE__))) unless defined? APP_ROOT
-require 'mailgun'
-require APP_ROOT+'/config/keys.local.rb'
-require APP_ROOT+'/api.rb'
-require 'unicorn'
-require 'stripe'
-require 'rack/cors'
+require File.expand_path('../config/environment', __FILE__)
 
 use Rack::Cors do
 	allow do
