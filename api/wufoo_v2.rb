@@ -33,7 +33,7 @@ module Democratech
 				doc[:email]=params["Field12"].downcase unless params["Field12"].nil?
 				doc[:zip]=params["Field38"]
 				doc[:pays]=params["Field42"].upcase unless params["Field42"].nil?
-				doc[:pays]="FRANCE" if doc[:pays].nil?
+				doc[:pays]="FRANCE" if doc[:pays].empty?
 				doc[:tel]=params["Field11"]
 				doc[:programme]=params["Field22"]
 				doc[:equipe]=params["Field23"]
@@ -42,7 +42,7 @@ module Democratech
 				doc[:mandat]=(params["Field34"].match(/^Oui/) ? params["Field36"]:params["Field34"]) unless params["Field34"].nil?
 				doc[:siteweb]=params["Field13"]
 				doc[:twitter]=params["Field15"]
-				doc[:fb]=params["Field14"]
+				doc[:facebook]=params["Field14"]
 				doc[:other]=params["Field21"]
 				doc[:summary]=params["Field30"]
 				doc[:photo_img]=params["Field44"] unless params["Field44"].nil?
