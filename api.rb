@@ -6,8 +6,9 @@ require 'bson'
 require 'time'
 require 'net/http'
 require 'uri'
-require_relative 'v1'
-require_relative 'v2'
+require_relative 'wufoo_v1'
+require_relative 'stripe_v1'
+require_relative 'supporteurs_v1'
 
 module Democratech
 	class API < Grape::API
@@ -59,7 +60,9 @@ module Democratech
 				end
 			end
 		end
-		mount Democratech::V2
-		mount Democratech::V1
+
+		mount Democratech::SupporteursV1
+		mount Democratech::StripeV1
+		mount Democratech::WufooV1
 	end
 end
