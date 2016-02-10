@@ -35,7 +35,7 @@ module Democratech
 				doc[:pays]=params["Field42"].upcase unless params["Field42"].nil?
 				doc[:pays]="FRANCE" if doc[:pays].empty?
 				doc[:tel]=params["Field11"]
-				doc[:programme]=params["Field22"]
+				doc[:programme]=(params["Field22"].match(/complet/) ? params["Field22"]:params["Field249"]) unless params["Field22"].nil?
 				doc[:equipe]=params["Field23"]
 				doc[:parti]=(params["Field24"]=="Oui" ? params["Field25"]:params["Field24"])
 				doc[:candidat]=(params["Field26"].match(/^Oui/) ? params["Field35"]:params["Field26"]) unless params["Field26"].nil?
