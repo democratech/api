@@ -14,18 +14,31 @@ module Democratech
 		end
 
 		helpers do
-			def slack_notification(msg,channel="supporteurs",icon=":ghost:",from="democratech")
+			def slack_notification(msg,channel="supporteurs",icon=":ghost:",from="democratech",attachment=nil)
 				uri = URI.parse(SLCKHOST)
 				http = Net::HTTP.new(uri.host, uri.port)
 				http.use_ssl = true
 				http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 				request = Net::HTTP::Post.new(SLCKPATH)
-				request.body = "payload="+JSON.dump({
+				msg={
 					"channel"=> channel,
 					"username"=> from,
 					"text"=> msg,
 					"icon_emoji"=>icon
-				})
+				}
+				if attachment then
+					msg["attachments"]=[{
+						"fallback"=>attachment["fallback"]
+					}]
+					msg["attachments"][0]["color"]=attachment["color"] if attachment["color"]
+					msg["attachments"][0]["pretext"]=attachment["pretext"] if attachment["pretext"]
+					msg["attachments"][0]["title"]=attachment["title"] if attachment["title"]
+					msg["attachments"][0]["title_link"]=attachment["title_link"] if attachment["title_link"]
+					msg["attachments"][0]["text"]=attachment["text"] if attachment["text"]
+					msg["attachments"][0]["image_url"]=attachment["image_url"] if attachment["image_url"]
+					msg["attachments"][0]["thumb_url"]=attachment["image_url"] if attachment["thumb_url"]
+				end
+				request.body = "payload="+JSON.dump(msg)
 				res=http.request(request)
 				if not res.kind_of? Net::HTTPSuccess then
 					puts "An error occurred trying to send a Slack notification\n"
