@@ -10,7 +10,7 @@ APP_ROOT=/home/democratech/api
 PID_PATH=/var/run/unicorn/api.democratech
 LOG_PATH=/var/log/unicorn
 PID=$PID_PATH/pid
-CMD="bundle exec unicorn -D -c /home/democratech/api/config/unicorn.conf.rb -E production /home/democratech/api/config/config.ru"
+CMD="bundle exec unicorn -D -c /home/democratech/api/config/unicorn.conf.rb -E production /home/democratech/api/config.ru"
 
 action="$1"
 set -u

@@ -3,7 +3,7 @@
    group nginx
    start program = "/etc/init.d/unicorn start"
    stop program = "/etc/init.d/unicorn stop"
-   if failed port 9292 protocol http request "/api/v1/test" for 2 cycles then restart
+   if failed port 9292 protocol http request "/api/" for 2 cycles then restart
    if 2 restarts with 2 cycles then timeout
    alert sysadmin@democratech.co on {timeout}
 
