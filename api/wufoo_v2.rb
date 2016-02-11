@@ -116,7 +116,12 @@ END
 				doc[:firstName]=params["Field19"].capitalize unless params["Field19"].nil?
 				doc[:lastName]=params["Field20"].upcase unless params["Field20"].nil?
 				doc[:qty]=params["Field9"].match(/^[0-9]+/)[0].to_i() unless params["Field9"].nil?
-				doc[:zip]=params["Field12"]
+				doc[:adresse]=params["Field123"]
+				doc[:adresse2]=params["Field124"]
+				doc[:zip]=params["Field127"]
+				doc[:ville]=params["Field125"]
+				doc[:etat]=params["Field126"]
+				doc[:pays]=params["Field128"]
 				doc[:store]=params["Field13"]
 				doc[:email]=params["Field14"]
 				doc[:telephone]=params["Field15"]
@@ -125,20 +130,49 @@ END
 				doc[:created]=Time.now.utc
 				body=<<END
 Distributeur : %s %s
+Adresse : %s %s, %s %s (%s)
 Quantité : %s
 Prix : %s euros
-Code postal : %s
 Commerçant ? %s
 Email : %s
 Téléphone : %s
 Message : %s
 END
-				message="Nouveau distributeur de Democratol !\n"+body % [doc[:firstName],doc[:lastName],doc[:qty].to_s,doc[:price].to_s,doc[:zip],doc[:store],doc[:email],doc[:telephone],doc[:message]]
+				message="Nouveau distributeur de Democratol !\n"+body % [
+					doc[:firstName],
+					doc[:lastName],
+					doc[:adresse],
+					doc[:adresse2],
+					doc[:zip],
+					doc[:ville],
+					doc[:pays],
+					doc[:qty].to_s,
+					doc[:price].to_s,
+					doc[:store],
+					doc[:email],
+					doc[:telephone],
+					doc[:message]
+				]
 				notifs.push([message,"democratol",":pill:","wufoo"])
 				insert_res=API.db[:democratol].insert_one(doc)
 				if insert_res.n!=1 then
 					error_msg="Erreur lors de l'enregistrement d'un distributeur de Democratol !\n"+body+"Error : %s\n"
-					message=error_msg % [doc[:firstName],doc[:lastName],doc[:qty].to_s,doc[:price].to_s,doc[:zip],doc[:store],doc[:email],doc[:telephone],doc[:message],insert_res.inspect]
+					message=error_msg % [
+						doc[:firstName],
+						doc[:lastName],
+						doc[:adresse],
+						doc[:adresse2],
+						doc[:zip],
+						doc[:ville],
+						doc[:pays],
+						doc[:qty].to_s,
+						doc[:price].to_s,
+						doc[:store],
+						doc[:email],
+						doc[:telephone],
+						doc[:message],
+						insert_res.inspect
+					]
 					notifs.push([
 						message,
 						"errors",

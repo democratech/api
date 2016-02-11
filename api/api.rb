@@ -65,6 +65,7 @@ module Democratech
 		end
 
 		mount ::Democratech::WufooV2
+		mount ::Democratech::StripeV2
 		mount ::Democratech::SupporteursV1
 		mount ::Democratech::StripeV1
 		mount ::Democratech::WufooV1
