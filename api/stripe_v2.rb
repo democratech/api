@@ -52,7 +52,7 @@ module Democratech
 							:paid=>amount.to_f,
 							:currency=>curr,
 						}
-						doc=API.db[:democratol].find({:email=>email}).find_one_and_update({'$set'=>update}) # returns the document found
+						doc=API.db[:democratol].find({:firstName=>firstname,:lastName=>lastname}).sort(:created=>-1).limit(1).find_one_and_update({'$set'=>update})
 						if doc.nil? then
 							notifs.push([
 								"acheteur de democratol non trouvé en base : %s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
@@ -103,7 +103,7 @@ END
 
 						end
 
-						email_hash=Digest::MD5.hexdigest(email)
+						email_hash=Digest::MD5.hexdigest(doc[:email])
 						uri = URI.parse(MCURL)
 						http = Net::HTTP.new(uri.host, uri.port)
 						http.use_ssl = true
