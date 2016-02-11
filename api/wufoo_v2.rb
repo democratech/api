@@ -119,11 +119,11 @@ END
 				doc[:adresse]=params["Field123"]
 				doc[:adresse2]=params["Field124"]
 				doc[:zip]=params["Field127"]
-				doc[:ville]=params["Field125"]
+				doc[:ville]=params["Field125"].capitalize unless params["Field125"].nil?
 				doc[:etat]=params["Field126"]
-				doc[:pays]=params["Field128"]
+				doc[:pays]=params["Field128"].capitalize unless params["Field128"].nil?
 				doc[:store]=params["Field13"]
-				doc[:email]=params["Field14"]
+				doc[:email]=params["Field14"].downcase unless params["Field14"].nil?
 				doc[:telephone]=params["Field15"]
 				doc[:message]=params["Field17"]
 				doc[:price]=params["PurchaseTotal"].to_f

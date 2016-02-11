@@ -42,7 +42,7 @@ module Democratech
 						curr=charge["currency"]
 						zip=charge["source"]["address_zip"]
 						adresse=charge["source"]["address_line1"]
-						city=charge["source"]["address_city"]
+						city=charge["source"]["address_city"].upcase unless charge["source"]["address_city"].nil?
 						email=charge["metadata"]["email"].downcase unless charge["metadata"]["email"].nil?
 						email="tfavre@gmail.com" if test
 						date=Time.now.utc
@@ -53,7 +53,6 @@ module Democratech
 							:currency=>curr,
 						}
 						doc=API.db[:democratol].find({:firstName=>firstname,:lastName=>lastname}).sort(:created=>-1).limit(1).find_one_and_update({'$set'=>update})
-						email=doc[:email]
 						if doc.nil? then
 							notifs.push([
 								"acheteur de democratol non trouvé en base : %s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
@@ -64,7 +63,7 @@ module Democratech
 							errors.push('400 Distributor could not be found in database')
 						else
 							notifs.push([
-								"paiement reçu de %s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
+								"paiement reçu de %s (%s) de %s (%s) : %s %s" % [name,doc[:email],city,zip,amount,curr],
 								"democratol",
 								":credit_card:",
 								"stripe"
@@ -95,40 +94,39 @@ END
 								doc[:message]
 							]
 							message_params = {
-								:from => email,
+								:from => doc[:email],
 								:to      => 'democratol@democratech.co',
 								:subject => "Nouvelle commande de %s Democratol !" % [doc[:qty].to_s],
 								:text    => message
 							}
 							API.mg_client.send_message(MGUNDOMAIN, message_params)
 
-						end
-
-						email_hash=Digest::MD5.hexdigest(email)
-						uri = URI.parse(MCURL)
-						http = Net::HTTP.new(uri.host, uri.port)
-						http.use_ssl = true
-						http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-						request = Net::HTTP::Patch.new("/3.0/lists/"+MCLIST_DEMOCRATOL+"/members/"+email_hash)
-						request.basic_auth 'hello',MCKEY
-						request.add_field('Content-Type', 'application/json')
-						request.body = JSON.dump({ 'merge_fields'=>{"PAID"=>"Oui"}})
-						res=http.request(request)
-						if res.kind_of? Net::HTTPSuccess then
-							notifs.push([
-								"Distributeur %s mis a jour. Payé : *Oui*" % [email],
-								"democratol",
-								":monkey_face:",
-								"mailchimp"
-							])
-						else
-							notifs.push([
-								"Erreur lors de la mise a jour du distributeur %s\nErreur code: %s\nErreur msg: %s" % [email,res.code,res.body],
-								"errors",
-								":speak_no_evil:",
-								"mailchimp"
-							])
-							errors.push('400 Distributor could not be updated in mailchimp')
+							email_hash=Digest::MD5.hexdigest(doc[:email])
+							uri = URI.parse(MCURL)
+							http = Net::HTTP.new(uri.host, uri.port)
+							http.use_ssl = true
+							http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+							request = Net::HTTP::Patch.new("/3.0/lists/"+MCLIST_DEMOCRATOL+"/members/"+email_hash)
+							request.basic_auth 'hello',MCKEY
+							request.add_field('Content-Type', 'application/json')
+							request.body = JSON.dump({ 'merge_fields'=>{"PAID"=>"Oui"}})
+							res=http.request(request)
+							if res.kind_of? Net::HTTPSuccess then
+								notifs.push([
+									"Distributeur %s mis a jour. Payé : *Oui*" % [email],
+									"democratol",
+									":monkey_face:",
+									"mailchimp"
+								])
+							else
+								notifs.push([
+									"Erreur lors de la mise a jour du distributeur %s\nErreur code: %s\nErreur msg: %s" % [email,res.code,res.body],
+									"errors",
+									":speak_no_evil:",
+									"mailchimp"
+								])
+								errors.push('400 Distributor could not be updated in mailchimp')
+							end
 						end
 					end
 				else
