@@ -55,7 +55,7 @@ module Democratech
 						doc=API.db[:democratol].find({:firstName=>firstname,:lastName=>lastname}).sort(:created=>-1).limit(1).find_one_and_update({'$set'=>update})
 						if doc.nil? then
 							notifs.push([
-								"acheteur de democratol non trouvé en base : %s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
+								"paiement reçu mais acheteur de democratol non trouvé en base :\n%s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
 								"errors",
 								":question:",
 								"mongodb"
@@ -132,10 +132,10 @@ END
 				else
 					errors.push('400 A pb occurred when reading the incoming event')
 				end
+				slack_notifications(notifs)
 				if not errors.empty? then
 					error!(errors.join("\n"),400)
 				end
-				slack_notifications(notifs)
 			end
 		end
 	end
