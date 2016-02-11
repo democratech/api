@@ -34,6 +34,7 @@ module Democratech
 					old_event=API.db[:democratol].find({:event=>event_id}).first # stripe best practice (idempotent)
 					if (old_event.nil? or test) then # event does not yet exists
 						charge=event["data"]["object"]
+						return if charge["description"].match(/democratol/).nil?
 						amount=charge["amount"].to_s
 						amount.insert(-3,".")
 						name=charge["source"]["name"]
