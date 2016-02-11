@@ -53,6 +53,7 @@ module Democratech
 							:currency=>curr,
 						}
 						doc=API.db[:democratol].find({:firstName=>firstname,:lastName=>lastname}).sort(:created=>-1).limit(1).find_one_and_update({'$set'=>update})
+						email=doc[:email]
 						if doc.nil? then
 							notifs.push([
 								"acheteur de democratol non trouvé en base : %s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
@@ -94,7 +95,7 @@ END
 								doc[:message]
 							]
 							message_params = {
-								:from => doc[:email],
+								:from => email,
 								:to      => 'democratol@democratech.co',
 								:subject => "Nouvelle commande de %s Democratol !" % [doc[:qty].to_s],
 								:text    => message
@@ -103,7 +104,7 @@ END
 
 						end
 
-						email_hash=Digest::MD5.hexdigest(doc[:email])
+						email_hash=Digest::MD5.hexdigest(email)
 						uri = URI.parse(MCURL)
 						http = Net::HTTP.new(uri.host, uri.port)
 						http.use_ssl = true
