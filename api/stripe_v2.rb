@@ -113,14 +113,14 @@ END
 							res=http.request(request)
 							if res.kind_of? Net::HTTPSuccess then
 								notifs.push([
-									"Distributeur %s mis a jour. Payé : *Oui*" % [email],
+									"Distributeur %s mis a jour. Payé : *Oui*" % [doc[:email]],
 									"democratol",
 									":monkey_face:",
 									"mailchimp"
 								])
 							else
 								notifs.push([
-									"Erreur lors de la mise a jour du distributeur %s\nErreur code: %s\nErreur msg: %s" % [email,res.code,res.body],
+									"Erreur lors de la mise a jour du distributeur %s\nErreur code: %s\nErreur msg: %s" % [doc[:email],res.code,res.body],
 									"errors",
 									":speak_no_evil:",
 									"mailchimp"
