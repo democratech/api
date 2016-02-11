@@ -31,7 +31,7 @@ module Democratech
 					event = Stripe::Event.retrieve(event_id) # stripe best practice (for security)
 				end
 				if not event.nil? then
-					old_event=API.db[:donateurs].find({:event=>event_id}).first # stripe best practice (idempotent)
+					old_event=API.db[:democratol].find({:event=>event_id}).first # stripe best practice (idempotent)
 					if (old_event.nil? or test) then # event does not yet exists
 						charge=event["data"]["object"]
 						amount=charge["amount"].to_s
@@ -111,11 +111,11 @@ END
 						request = Net::HTTP::Patch.new("/3.0/lists/"+MCLIST_DEMOCRATOL+"/members/"+email_hash)
 						request.basic_auth 'hello',MCKEY
 						request.add_field('Content-Type', 'application/json')
-						request.body = JSON.dump({ 'merge_fields'=>{"PAID"=>"YES"}})
+						request.body = JSON.dump({ 'merge_fields'=>{"PAID"=>"Oui"}})
 						res=http.request(request)
 						if res.kind_of? Net::HTTPSuccess then
 							notifs.push([
-								"Distributeur %s mis a jour. Paid: YES" % [email],
+								"Distributeur %s mis a jour. Payé : *Oui*" % [email],
 								"democratol",
 								":monkey_face:",
 								"mailchimp"
