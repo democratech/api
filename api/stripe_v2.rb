@@ -53,10 +53,10 @@ module Democratech
 							:paid=>amount.to_f,
 							:currency=>curr,
 						}
-						doc=API.db[:democratol].find({:firstName=>firstname,:lastName=>lastname}).sort(:created=>-1).limit(1).find_one_and_update({'$set'=>update})
+						doc=API.db[:democratol].find({:price=>amount.to_f,:lastName=>lastname,:paid=>{"$exists"=>false}}).sort(:created=>-1).limit(1).find_one_and_update({'$set'=>update})
 						if doc.nil? then
 							notifs.push([
-								"paiement reçu mais acheteur de democratol non trouvé en base :\n%s (%s) de %s (%s) : %s %s" % [name,email,city,zip,amount,curr],
+								"paiement reçu mais acheteur de democratol non trouvé en base :\n%s %s (%s) de %s (%s) : %s %s" % [firstname,lastname,email,city,zip,amount,curr],
 								"errors",
 								":question:",
 								"mongodb"
