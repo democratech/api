@@ -10,7 +10,7 @@ In order not to require extensive coding resources for coding websites, democrat
 * [Slack](https://slack.com) for communication / notifications
 * [Mailchimp](https://mailchimp.com) for emailing
 
-Nevertheless, we needed an API of ours (Zapier-like) to properly synchronize all those services.
+Nevertheless, we needed an API of ours (think "Zapier") to properly synchronize all those services.
 
 ## Process overview
 
