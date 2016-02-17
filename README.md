@@ -60,8 +60,6 @@ It should return an HTTP 200 OK
 
 So far, democratech's Services API is being developed and maintained by
 * [Thibauld Favre](https://twitter.com/thibauld)
-* [Jean-Tristan Chanègue](https://www.linkedin.com/in/jeantristanchanegue)
-* Feel free to join us! 
 
 ## License
 
