@@ -23,7 +23,7 @@ module Democratech
 				return {"api_version"=>"email/v1"}
 			end
 
-			get 'share' do
+			post 'share' do
 				error!('401 Unauthorized', 401) unless authorized
 				email=params["Field1"]
 				return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
