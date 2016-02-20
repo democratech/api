@@ -12,12 +12,19 @@ module Democratech
 		end
 
 		resource :email do
+			helpers do
+				def authorized
+					params['HandshakeKey']==WUFHS
+				end
+			end
+
 			get do
 				# DO NOT DELETE used to test the api is live
 				return {"api_version"=>"email/v1"}
 			end
 
 			get 'share' do
+				error!('401 Unauthorized', 401) unless authorized
 				email=params["Field1"]
 				return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
 				notifs=[]
