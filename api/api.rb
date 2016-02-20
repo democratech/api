@@ -5,7 +5,7 @@ module Democratech
 		prefix 'api'
 		format :json
 		class << self
-			attr_accessor :db, :mg_client
+			attr_accessor :db, :mg_client, :mandrill
 		end
 
 		get do
@@ -69,5 +69,6 @@ module Democratech
 		mount ::Democratech::SupporteursV1
 		mount ::Democratech::StripeV1
 		mount ::Democratech::WufooV1
+		mount ::Democratech::EmailV1
 	end
 end

@@ -9,6 +9,7 @@ end
 
 Mongo::Logger.logger.level = Logger::WARN
 Democratech::API.mg_client=Mailgun::Client.new(MGUNKEY)
+Democratech::API.mandrill=Mandrill::API.new(MANDRILLKEY)
 Democratech::API.db=Mongo::Client.new(DBURL)
 Stripe.api_key=STRTEST
 
