@@ -238,7 +238,7 @@ END
 				if success then
 					# we retrieve the subscriber ID from the newly created mailchimp entry
 					slack_msg="Enregistrement du nouveau supporteur (%s %s) OK !" % [doc[:firstName],doc[:lastName]]
-					slack_msg+=" (source: %s)" % [doc[:cmp]] if not doc[:cmp].nil?
+					slack_msg+=" (source: %s)" % [doc[:cmp]] if not doc[:cmp].empty?
 					mailchimp_id=JSON.parse(res.body)["id"]
 					notifs.push([
 						slack_msg,
