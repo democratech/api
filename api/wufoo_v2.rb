@@ -212,6 +212,77 @@ END
 				end
 			end
 
+			post 'supporter' do
+				error!('401 Unauthorized', 401) unless authorized
+				errors=[]
+				notifs=[]
+
+				# 1. We read the new supporter info from the parameters
+				doc={}
+				doc[:firstName]=params["Field9"].capitalize unless params["Field9"].nil?
+				doc[:lastName]=params["Field10"].upcase unless params["Field10"].nil?
+				doc[:email]=params["Field1"].downcase unless params["Field1"].nil?
+				doc[:country]=params["Field127"].upcase unless params["Field127"].nil?
+				doc[:postalCode]=params["Field118"].strip.gsub(/\s+/,"") unless params["Field118"].nil?
+				doc[:city]=params["Field130"].upcase unless params["Field130"].nil?
+				doc[:reason]=params["Field119"] unless params["Field119"].nil?
+				doc[:cmp]=params["Field132"] unless params["Field132"].nil?
+				doc[:created]=Time.now.utc
+				if doc[:city].to_s.empty? and not doc[:postalCode].to_s.empty? then
+					commune=API.db[:communes].find({:postalCode=>doc[:postalCode]}).first
+					doc[:city]=commune['name'] unless commune.nil?
+				end
+
+				# 2. we subscribe the new supporter to our mailchimp mailing list
+				success,res=add_to_mailing_list(doc)
+				if success then
+					# we retrieve the subscriber ID from the newly created mailchimp entry
+					slack_msg="Enregistrement du nouveau supporteur (%s %s) OK !" % [doc[:firstName],doc[:lastName]]
+					slack_msg+=" (source: %s)" % [doc[:cmp]] if not doc[:cmp].nil?
+					mailchimp_id=JSON.parse(res.body)["id"]
+					notifs.push([
+						slack_msg,
+						"supporteurs",
+						":monkey_face:",
+						"mailchimp"
+					])
+				else
+					notifs.push([
+						"Erreur lors de l'enregistrement d'un nouveau supporteur ! [CODE: %s]" % [res.code],
+						"errors",
+						":speak_no_evil:",
+						"mailchimp"
+					])
+					errors.push('400 Supporter could not be subscribed')
+				end
+
+				# 3. We register the new supporter into the DB (with his mailchimp id if subscription was successful)
+				doc[:mailchimp_id]=mailchimp_id unless mailchimp_id.nil?
+				insert_res=API.db[:supporteurs].insert_one(doc)
+				if insert_res.n==1 then
+					notifs.push([
+						"Nouveau supporteur ! %s %s (%s, %s, %s) : %s" % [doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:country],doc[:reason]],
+						"supporteurs",
+						":thumbsup:",
+						"mongodb"
+					])
+				else # if the supporter could not be insert in the db
+					notifs.push([
+						"Erreur lors de l'enregistrement d'un nouveau supporteur: %s ! %s %s (%s, %s, %s) : %s\nError msg: %s\nError trace: %s" % [doc[:email],doc[:firstName],doc[:lastName],doc[:postalCode],doc[:city],doc[:country],doc[:reason],insert_res.inspect],
+						"errors",
+						":scream:",
+						"mongodb"
+					])
+					errors.push('400 Supporter could not be registered')
+				end
+
+				# 4. We send the notifications and return
+				slack_notifications(notifs)
+				if not errors.empty? then
+					error!(errors.join("\n"),400)
+				end
+			end
+
 			post 'contributor' do
 				error!('401 Unauthorized', 401) unless authorized
 				errors=[]
