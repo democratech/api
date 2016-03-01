@@ -20,7 +20,6 @@
 
 module Democratech
 	class StripeV1 < Grape::API
-		prefix 'api'
 		version ['v1','v2']
 		format :json
 

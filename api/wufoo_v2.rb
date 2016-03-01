@@ -20,7 +20,6 @@
 
 module Democratech
 	class WufooV2 < Grape::API
-		prefix 'api'
 		version ['v2']
 		format :json
 

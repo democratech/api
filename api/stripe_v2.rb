@@ -22,7 +22,6 @@ require 'digest/md5'
 
 module Democratech
 	class StripeV2 < Grape::API
-		prefix 'api'
 		version ['v2']
 		format :json
 

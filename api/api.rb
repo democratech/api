@@ -20,7 +20,6 @@
 
 module Democratech
 	class API < Grape::API
-		prefix 'api'
 		format :json
 		class << self
 			attr_accessor :db, :mg_client, :mandrill
