@@ -6,7 +6,7 @@ PATH=$PATH:/usr/local/bin
 
 ### Unicorn Variables ###
 TIMEOUT=30
-APP_ROOT=/home/democratech/api
+APP_ROOT=/home/laprimaire/api.democratech.co
 PID_PATH=/var/run/unicorn/api.democratech
 LOG_PATH=/var/log/unicorn
 PID=$PID_PATH/pid
