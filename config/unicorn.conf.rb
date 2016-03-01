@@ -25,13 +25,13 @@ timeout 30
 preload_app true
 
 # feel free to point this anywhere accessible on the filesystem
-pid "/var/run/unicorn/api.democratech/pid"
+pid "/var/run/unicorn/api.democratech.co/pid"
 
 # By default, the Unicorn logger will write to stderr.
 # Additionally, ome applications/frameworks log to stderr or stdout,
 # so prevent them from going to /dev/null when daemonized here:
-stderr_path "/var/log/unicorn/api.democratech.err.log"
-stdout_path "/var/log/unicorn/api.democratech.log"
+stderr_path "/var/log/unicorn/api.democratech.co.err.log"
+stdout_path "/var/log/unicorn/api.democratech.co.log"
 
 # The user/group to run unicorn as
 user 'www-data', 'www-data'
@@ -46,7 +46,7 @@ end
 
 before_fork do |server, worker|
   defined?(ActiveRecord::Base) && ActiveRecord::Base.connection.disconnect!
-  old_pid = "/var/run/unicorn/api.democratech/pid.oldbin"
+  old_pid = "/var/run/unicorn/api.democratech.co/pid.oldbin"
   if File.exists?(old_pid) && server.pid != old_pid
     begin
       Process.kill('QUIT', File.read(old_pid).to_i)
