@@ -13,12 +13,13 @@ PGPWD=DEBUG ? PGPWD_TEST : PGPWD_LIVE
 PGNAME=DEBUG ? PGNAME_TEST : PGNAME_LIVE
 PGUSER=DEBUG ? PGUSER_TEST : PGUSER_LIVE
 PGHOST=DEBUG ? PGHOST_TEST : PGHOST_LIVE
+STR_KEY=DEBUG ? STRTEST : STRLIVE
 puts "connect to database : #{PGNAME} with user : #{PGUSER}"
 
 Mongo::Logger.logger.level = Logger::WARN
 Democratech::API.mg_client=Mailgun::Client.new(MGUNKEY)
 Democratech::API.mandrill=Mandrill::API.new(MANDRILLKEY)
 Democratech::API.db=Mongo::Client.new(DBURL)
-Stripe.api_key=STRLIVE
+Stripe.api_key=STR_KEY
 
 run Democratech::API
