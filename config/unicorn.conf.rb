@@ -25,16 +25,14 @@ timeout 30
 preload_app true
 
 # feel free to point this anywhere accessible on the filesystem
-pid "/var/run/unicorn/api.democratech.co/pid"
-
-# By default, the Unicorn logger will write to stderr.
-# Additionally, ome applications/frameworks log to stderr or stdout,
-# so prevent them from going to /dev/null when daemonized here:
-stderr_path "/var/log/unicorn/api.democratech.co.err.log"
-stdout_path "/var/log/unicorn/api.democratech.co.log"
+if ENV['RACK_ENV']=='production' then
+	stderr_path "/var/log/unicorn/api.democratech.co.err.log"
+	stdout_path "/var/log/unicorn/api.democratech.co.log"
+	user 'www-data', 'www-data'
+end
+pid "%s/pid/pid" % [APP_ROOT]
 
 # The user/group to run unicorn as
-user 'www-data', 'www-data'
 
 if GC.respond_to?(:copy_on_write_friendly=)
   GC.copy_on_write_friendly = true
@@ -46,14 +44,10 @@ end
 
 before_fork do |server, worker|
   defined?(ActiveRecord::Base) && ActiveRecord::Base.connection.disconnect!
-  Democratech::API.pg.close() if not Democratech::API.pg.nil?
-  Democratech::API.pg=PG.connect(
-	  "dbname"=>PGNAME,
-	  "user"=>PGUSER,
-	  "password"=>PGPWD,
-	  "host"=>PGHOST, 
-	  "port"=>PGPORT
-  )
+  if Democratech::API.pg then
+	  Democratech::API.pg.flush
+	  Democratech::API.pg.close
+  end
   old_pid = "/var/run/unicorn/api.democratech.co/pid.oldbin"
   if File.exists?(old_pid) && server.pid != old_pid
     begin
@@ -67,11 +61,14 @@ end
 # What to do after we fork a worker
 after_fork do |server, worker|
   defined?(ActiveRecord::Base) && ActiveRecord::Base.establish_connection
-  if Democratech::API.pg then
-	  Democratech::API.pg.flush
-	  Democratech::API.pg.close
-  end
-
+  Democratech::API.pg.close() if not Democratech::API.pg.nil?
+  Democratech::API.pg=PG.connect(
+	  "dbname"=>PGNAME,
+	  "user"=>PGUSER,
+	  "password"=>PGPWD,
+	  "host"=>PGHOST,
+	  "port"=>PGPORT
+  )
   # Create worker pids too
   child_pid = server.config[:pid].sub(/pid$/, "worker.#{worker.nr}.pid")
   system("echo #{Process.pid} > #{child_pid}")
