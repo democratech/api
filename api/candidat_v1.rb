@@ -78,12 +78,6 @@ module Democratech
 				res=API.pg.exec_params(get_candidate,[candidate_id])
 				if not res.num_tuples.zero? then
 					candidate=res[0]
-					email={
-						"TO"=>email,
-						"CANDIDATE"=>candidate['name'],
-						"CANDIDATE_ID"=>candidate_id,
-						"NB_SOUTIENS"=>candidate['nb_soutiens']
-					}
 					msg=message
 					msg[:subject]="Soutenez la candidature citoyenne de #{candidate['name']} sur LaPrimaire.org"
 					msg[:to][0][:email]=email

@@ -7,7 +7,7 @@ PATH=$PATH:/usr/local/bin
 ### Unicorn Variables ###
 TIMEOUT=30
 APP_ROOT=/home/laprimaire/api.democratech.co
-PID_PATH=/var/run/unicorn/api.democratech.co
+PID_PATH=/home/laprimaire/api.democratech.co/pid
 LOG_PATH=/var/log/unicorn
 PID=$PID_PATH/pid
 CMD="bundle exec unicorn -D -c $APP_ROOT/config/unicorn.conf.rb -E production $APP_ROOT/config.ru"
