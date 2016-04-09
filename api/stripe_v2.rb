@@ -56,8 +56,8 @@ module Democratech
 						amount=charge["amount"].to_s
 						amount.insert(-3,".")
 						name=charge["source"]["name"]
-						firstname=name.split(" ")[0].capitalize unless name.nil?
-						lastname=name.split(" ",2)[1].upcase unless name.nil?
+						firstname=name.split(" ")[0].strip.capitalize unless name.nil?
+						lastname=name.split(" ",2)[1].strip.upcase unless name.nil?
 						curr=charge["currency"]
 						zip=charge["source"]["address_zip"]
 						adresse=charge["source"]["address_line1"]

@@ -46,6 +46,14 @@ end
 
 before_fork do |server, worker|
   defined?(ActiveRecord::Base) && ActiveRecord::Base.connection.disconnect!
+  Democratech::API.pg.close()
+  Democratech::API.pg=PG.connect(
+	  "dbname"=>PGNAME,
+	  "user"=>PGUSER,
+	  "password"=>PGPWD,
+	  "host"=>PGHOST, 
+	  "port"=>PGPORT
+  )
   old_pid = "/var/run/unicorn/api.democratech.co/pid.oldbin"
   if File.exists?(old_pid) && server.pid != old_pid
     begin
@@ -59,6 +67,10 @@ end
 # What to do after we fork a worker
 after_fork do |server, worker|
   defined?(ActiveRecord::Base) && ActiveRecord::Base.establish_connection
+  if Democratech::API.pg then
+	  Democratech::API.pg.flush
+	  Democratech::API.pg.close
+  end
 
   # Create worker pids too
   child_pid = server.config[:pid].sub(/pid$/, "worker.#{worker.nr}.pid")
