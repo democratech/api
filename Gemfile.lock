@@ -51,6 +51,7 @@ GEM
     multi_json (1.11.2)
     multi_xml (0.5.5)
     netrc (0.11.0)
+    pg (0.18.4)
     rack (1.6.4)
     rack-accept (0.4.5)
       rack (>= 0.4)
@@ -90,6 +91,7 @@ DEPENDENCIES
   mailgun-ruby
   mandrill-api
   mongo (~> 2.0.6)
+  pg
   rack
   rack-cors
   stripe

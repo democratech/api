@@ -46,7 +46,7 @@ end
 
 before_fork do |server, worker|
   defined?(ActiveRecord::Base) && ActiveRecord::Base.connection.disconnect!
-  Democratech::API.pg.close()
+  Democratech::API.pg.close() if not Democratech::API.pg.nil?
   Democratech::API.pg=PG.connect(
 	  "dbname"=>PGNAME,
 	  "user"=>PGUSER,
