@@ -79,6 +79,20 @@ module Democratech
 					slack_notification(v,k,":bell:","democratech")
 				end
 			end
+
+			def pg_connect()
+				Democratech::API.pg=PG.connect(
+					"dbname"=>PGNAME,
+					"user"=>PGUSER,
+					"password"=>PGPWD,
+					"host"=>PGHOST,
+					"port"=>PGPORT
+				)
+			end
+
+			def pg_close()
+				Democratech::API.pg.close
+			end
 		end
 
 		mount ::Democratech::WufooV2
@@ -88,5 +102,6 @@ module Democratech
 		mount ::Democratech::WufooV1
 		mount ::Democratech::EmailV1
 		mount ::Democratech::CandidatV1
+		mount ::Democratech::AppV1
 	end
 end

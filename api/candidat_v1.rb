@@ -42,41 +42,46 @@ module Democratech
 
 			post 'share' do
 				error!('401 Unauthorized', 401) unless authorized
-				email=params["Field1"]
-				candidate_id=params["Field3"]
-				return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
-				notifs=[]
-				email=email.downcase
-				message= {  
-					:from_name=> "LaPrimaire.org",  
-					:subject=> "Pour un vrai choix de candidats en 2017  !",  
-					:to=>[  
-						{  
-							:email=> "email_dest",
-						}  
-					],
-					:merge_vars=>[
-						{
-							:vars=>[
-								{
-									:name=>"CANDIDATE",
-									:content=>"john"
-								},
-								{
-									:name=>"CANDIDATE_ID",
-									:content=>"doe"
-								},
-								{
-									:name=>"NB_SOUTIENS",
-									:content=>"doe"
-								},
-							]
-						}
-					]
-				}
-				get_candidate="SELECT c.candidate_id,c.name, count(*) as nb_soutiens FROM candidates as c INNER JOIN supporters as s ON (s.candidate_id=c.candidate_id) WHERE s.candidate_id=$1 GROUP BY c.candidate_id,c.name"
-				res=API.pg.exec_params(get_candidate,[candidate_id])
-				if not res.num_tuples.zero? then
+				begin
+					pg_connect()
+					email=params["Field1"]
+					candidate_id=params["Field3"]
+					return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
+					notifs=[]
+					email=email.downcase
+					message= {
+						:from_name=> "LaPrimaire.org",
+						:subject=> "Pour un vrai choix de candidats en 2017  !",
+						:to=>[{ :email=> "email_dest" }],
+						:merge_vars=>[
+							{
+								:vars=>[
+									{
+										:name=>"CANDIDATE",
+										:content=>"john"
+									},
+									{
+										:name=>"CANDIDATE_ID",
+										:content=>"doe"
+									},
+									{
+										:name=>"NB_SOUTIENS",
+										:content=>"doe"
+									},
+								]
+							}
+						]
+					}
+					get_candidate=<<END
+SELECT c.candidate_id,c.name, count(*) as nb_soutiens FROM candidates as c INNER JOIN supporters as s ON (s.candidate_id=c.candidate_id) WHERE s.candidate_id=$1 GROUP BY c.candidate_id,c.name
+END
+					res=API.pg.exec_params(get_candidate,[candidate_id])
+				rescue
+					res=nil
+				ensure
+					pg_close()
+				end
+				if not res.nil? and not res.num_tuples.zero? then
 					candidate=res[0]
 					msg=message
 					msg[:subject]="Soutenez la candidature citoyenne de #{candidate['name']} sur LaPrimaire.org"
