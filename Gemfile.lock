@@ -7,6 +7,12 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
+    aws-sdk (2.3.2)
+      aws-sdk-resources (= 2.3.2)
+    aws-sdk-core (2.3.2)
+      jmespath (~> 1.0)
+    aws-sdk-resources (2.3.2)
+      aws-sdk-core (= 2.3.2)
     axiom-types (0.1.1)
       descendants_tracker (~> 0.0.4)
       ice_nine (~> 0.11.0)
@@ -36,7 +42,10 @@ GEM
       domain_name (~> 0.5)
     i18n (0.7.0)
     ice_nine (0.11.1)
+    jmespath (1.2.4)
+      json_pure (>= 1.8.1)
     json (1.8.3)
+    json_pure (1.8.3)
     kgio (2.10.0)
     mailgun-ruby (1.0.3)
       json (~> 1.8)
@@ -45,6 +54,7 @@ GEM
       excon (>= 0.16.0, < 1.0)
       json (>= 1.7.7, < 2.0)
     mime-types (2.6.2)
+    mini_magick (4.4.0)
     minitest (5.8.2)
     mongo (2.0.6)
       bson (~> 3.0)
@@ -86,10 +96,12 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  aws-sdk
   bson (~> 3.0)
   grape (= 0.12.0)
   mailgun-ruby
   mandrill-api
+  mini_magick
   mongo (~> 2.0.6)
   pg
   rack

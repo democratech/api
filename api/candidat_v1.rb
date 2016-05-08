@@ -33,6 +33,18 @@ module Democratech
 				def authorized
 					params['HandshakeKey']==WUFHS
 				end
+
+				def upload_image(filename)
+					bucket=API.aws.bucket(AWS_BUCKET)
+					key=File.basename(filename)
+					obj=bucket.object(key)
+					if bucket.object(key).exists? then
+						STDERR.puts "#{key} already exists in S3 bucket. deleting previous object."
+						obj.delete
+					end
+					obj.upload_file(filename, acl:'public-read')
+					return key
+				end
 			end
 
 			get do
@@ -108,6 +120,117 @@ END
 						])
 					end
 					slack_notifications(notifs) if not notifs.empty?
+				end
+			end
+
+			post 'about' do
+				error!('401 Unauthorized', 401) unless authorized
+				begin
+					pg_connect()
+					birthday=params["Field8"][0..3]+"-"+params["Field8"][4..5]+"-"+params["Field8"][6..7]
+					maj={
+						:birthday => birthday, #YYYY-MM-DD
+						:departement => params["Field9"],
+						:secteur => params["Field12"],
+						:job => params["Field17"],
+						:key => params["Field15"],
+						:email => params["Field18"]
+					}
+					update_candidate=<<END
+UPDATE candidates SET birthday=$1 ,departement=$2, secteur=$3, job=$4 WHERE candidate_key=$5 RETURNING *
+END
+					res=API.pg.exec_params(update_candidate,[maj[:birthday],maj[:departement],maj[:secteur],maj[:job],maj[:key]])
+					STDERR.puts "candidate info not updated : candidate not found" if res.num_tuples.zero?
+				rescue Exception=>e
+					STDERR.puts "Exception raised : #{e.message}"
+					res=nil
+				ensure
+					pg_close()
+				end
+			end
+
+			post 'summary' do
+				error!('401 Unauthorized', 401) unless authorized
+				begin
+					pg_connect()
+					maj={
+						:vision => params["Field1"],
+						:prio1 => params["Field3"],
+						:prio2 => params["Field2"],
+						:prio3 => params["Field4"],
+						:key => params["Field6"],
+						:email => params["Field7"]
+					}
+					update_candidate=<<END
+UPDATE candidates SET vision=$1 ,prio1=$2, prio2=$3, prio3=$4 WHERE candidate_key=$5 RETURNING *
+END
+					res=API.pg.exec_params(update_candidate,[maj[:vision],maj[:prio1],maj[:prio2],maj[:prio3],maj[:key]])
+					STDERR.puts "candidate summary not updated : candidate not found" if res.num_tuples.zero?
+				rescue Exception=>e
+					STDERR.puts "Exception raised : #{e.message}"
+					res=nil
+				ensure
+					pg_close()
+				end
+			end
+
+			post 'links' do
+				error!('401 Unauthorized', 401) unless authorized
+				begin
+					pg_connect()
+					maj={
+						:trello => params["Field8"],
+						:website => params["Field1"],
+						:facebook => params["Field2"],
+						:twitter => params["Field3"],
+						:linkedin => params["Field4"],
+						:blog => params["Field5"],
+						:instagram => params["Field6"],
+						:wikipedia => params["Field7"],
+						:key => params["Field9"],
+						:email => params["Field11"]
+					}
+					update_candidate=<<END
+UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8 WHERE candidate_key=$9 RETURNING *
+END
+					res=API.pg.exec_params(update_candidate,[maj[:trello],maj[:website],maj[:facebook],maj[:twitter],maj[:linkedin],maj[:blog],maj[:instagram],maj[:wikipedia],maj[:key]])
+					STDERR.puts "candidate links not updated : candidate not found" if res.num_tuples.zero?
+				rescue Exception=>e
+					STDERR.puts "Exception raised : #{e.message}"
+					res=nil
+				ensure
+					pg_close()
+				end
+			end
+
+			post 'photo' do
+				error!('401 Unauthorized', 401) unless authorized
+				begin
+					pg_connect()
+					maj={
+						:key => params["Field3"],
+						:email => params["Field4"],
+						:photo_key => params["Field1"],
+						:photo_url => params["Field1-url"]
+					}
+					get_candidate=<<END
+SELECT c.candidate_id,c.candidate_key,c.name,c.photo FROM candidates as c WHERE c.candidate_key=$1
+END
+					res=API.pg.exec_params(get_candidate,[maj[:key]])
+					raise "candidate photo not updated: candidate not found" if res.num_tuples.zero?
+					candidate=res[0]
+					photo=candidate['photo']
+					photo="#{candidate['candidate_id']}.jpeg" if photo.nil? or photo.empty?
+					upload_img=MiniMagick::Image.open(maj[:photo_url])
+					upload_img.resize "x300"
+					photo_path="/tmp/#{photo}"
+					upload_img.write(photo_path)
+					upload_image(photo_path)
+				rescue Exception=>e
+					STDERR.puts "Exception raised : #{e.message}"
+					res=nil
+				ensure
+					pg_close()
 				end
 			end
 		end
