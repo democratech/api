@@ -45,6 +45,15 @@ module Democratech
 					obj.upload_file(filename, acl:'public-read')
 					return key
 				end
+
+				def strip_tags(text)
+					return text.gsub(/<\/?[^>]*>/, "")
+				end
+
+				def fix_wufoo(url)
+					url.gsub!(':/','://') if url.match(/https?:\/\//).nil?
+					return url
+				end
 			end
 
 			get do
@@ -129,12 +138,12 @@ END
 					pg_connect()
 					birthday=params["Field8"][0..3]+"-"+params["Field8"][4..5]+"-"+params["Field8"][6..7]
 					maj={
-						:birthday => birthday, #YYYY-MM-DD
-						:departement => params["Field9"],
-						:secteur => params["Field12"],
-						:job => params["Field17"],
-						:key => params["Field15"],
-						:email => params["Field18"]
+						:birthday => strip_tags(birthday), #YYYY-MM-DD
+						:departement => strip_tags(params["Field9"]),
+						:secteur => strip_tags(params["Field12"]),
+						:job => strip_tags(params["Field17"]),
+						:key => strip_tags(params["Field15"]),
+						:email => strip_tags(params["Field18"])
 					}
 					update_candidate=<<END
 UPDATE candidates SET birthday=$1 ,departement=$2, secteur=$3, job=$4 WHERE candidate_key=$5 RETURNING *
@@ -154,12 +163,12 @@ END
 				begin
 					pg_connect()
 					maj={
-						:vision => params["Field1"],
-						:prio1 => params["Field3"],
-						:prio2 => params["Field2"],
-						:prio3 => params["Field4"],
-						:key => params["Field6"],
-						:email => params["Field7"]
+						:vision => strip_tags(params["Field1"]),
+						:prio1 => strip_tags(params["Field3"]),
+						:prio2 => strip_tags(params["Field2"]),
+						:prio3 => strip_tags(params["Field4"]),
+						:key => strip_tags(params["Field6"]),
+						:email => strip_tags(params["Field7"])
 					}
 					update_candidate=<<END
 UPDATE candidates SET vision=$1 ,prio1=$2, prio2=$3, prio3=$4 WHERE candidate_key=$5 RETURNING *
@@ -179,21 +188,22 @@ END
 				begin
 					pg_connect()
 					maj={
-						:trello => params["Field8"],
-						:website => params["Field1"],
-						:facebook => params["Field2"],
-						:twitter => params["Field3"],
-						:linkedin => params["Field4"],
-						:blog => params["Field5"],
-						:instagram => params["Field6"],
-						:wikipedia => params["Field7"],
-						:key => params["Field9"],
-						:email => params["Field11"]
+						:trello => fix_wufoo(strip_tags(params["Field8"])),
+						:website => fix_wufoo(strip_tags(params["Field1"])),
+						:facebook => fix_wufoo(strip_tags(params["Field2"])),
+						:twitter => fix_wufoo(strip_tags(params["Field3"])),
+						:linkedin => fix_wufoo(strip_tags(params["Field4"])),
+						:blog => fix_wufoo(strip_tags(params["Field5"])),
+						:youtube => fix_wufoo(strip_tags(params["Field13"])),
+						:instagram => fix_wufoo(strip_tags(params["Field6"])),
+						:wikipedia => fix_wufoo(strip_tags(params["Field7"])),
+						:key => fix_wufoo(strip_tags(params["Field9"])),
+						:email => fix_wufoo(strip_tags(params["Field11"]))
 					}
 					update_candidate=<<END
-UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8 WHERE candidate_key=$9 RETURNING *
+UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8, youtube=$9 WHERE candidate_key=$10 RETURNING *
 END
-					res=API.pg.exec_params(update_candidate,[maj[:trello],maj[:website],maj[:facebook],maj[:twitter],maj[:linkedin],maj[:blog],maj[:instagram],maj[:wikipedia],maj[:key]])
+					res=API.pg.exec_params(update_candidate,[maj[:trello],maj[:website],maj[:facebook],maj[:twitter],maj[:linkedin],maj[:blog],maj[:instagram],maj[:wikipedia],maj[:youtube],maj[:key]])
 					STDERR.puts "candidate links not updated : candidate not found" if res.num_tuples.zero?
 				rescue Exception=>e
 					STDERR.puts "Exception raised : #{e.message}"
@@ -208,10 +218,10 @@ END
 				begin
 					pg_connect()
 					maj={
-						:key => params["Field3"],
-						:email => params["Field4"],
-						:photo_key => params["Field1"],
-						:photo_url => params["Field1-url"]
+						:key => strip_tags(params["Field3"]),
+						:email => strip_tags(params["Field4"]),
+						:photo_key => strip_tags(params["Field1"]),
+						:photo_url => strip_tags(params["Field1-url"])
 					}
 					get_candidate=<<END
 SELECT c.candidate_id,c.candidate_key,c.name,c.photo FROM candidates as c WHERE c.candidate_key=$1
