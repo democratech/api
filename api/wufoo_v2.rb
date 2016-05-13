@@ -56,6 +56,27 @@ module Democratech
 					res=http.request(request)
 					return res.kind_of?(Net::HTTPSuccess),res
 				end
+
+				def fix_wufoo(url)
+					url.gsub!(':/','://') if url.match(/https?:\/\//).nil?
+					return url
+				end
+
+				def strip_tags(text)
+					return text.gsub(/<\/?[^>]*>/, "")
+				end
+
+				def upload_image(filename)
+					bucket=API.aws.bucket(AWS_BUCKET)
+					key=File.basename(filename)
+					obj=bucket.object(key)
+					if bucket.object(key).exists? then
+						STDERR.puts "#{key} already exists in S3 bucket. deleting previous object."
+						obj.delete
+					end
+					obj.upload_file(filename, acl:'public-read')
+					return key
+				end
 			end
 
 			get do
@@ -66,7 +87,69 @@ module Democratech
 			post 'preinscription' do
 				error!('401 Unauthorized', 401) unless authorized
 				errors=[]
-				# 1. We read the new supporter info from the parameters
+				begin
+					pg_connect()
+					# 1. Enregistrement du candidat
+					uuid=((rand()*1000000000000).to_i).to_s
+					profile_pic=nil
+					if not params["Field44"].nil? and not params["Field44"].empty? then
+						profile_pic="#{uuid}"+File.extname(params["Field44"])
+						photo=profile_pic
+						upload_img=MiniMagick::Image.open(params["Field44-url"])
+						upload_img.resize "x300"
+						photo_path="/tmp/#{photo}"
+						upload_img.write(photo_path)
+						upload_image(photo_path)
+					end
+					maj={
+						:candidate_id => ((rand()*1000000000000).to_i).to_s,
+						:name => fix_wufoo(strip_tags(params["Field3"]+' '+params["Field4"])),
+						:gender => params["Field32"]=="Un homme" ? "M" : "F",
+						:country => params["Field39"]=="Oui" ? "FRANCE" : params["Field42"],
+						:zipcode =>  params["Field39"]=="Oui" ? fix_wufoo(strip_tags(params["Field38"])) : nil,
+						:email => fix_wufoo(strip_tags(params["Field12"])),
+						:job => fix_wufoo(strip_tags(params["Field252"])),
+						:tel => fix_wufoo(strip_tags(params["Field11"])),
+						:program_theme => params["Field22"]=="Un programme complet" ? "global" : fix_wufoo(strip_tags(params["Field249"])),
+						:with_team => params["Field23"].match(/seul/).nil?,
+						:political_party => params["Field24"]=="Oui" ? fix_wufoo(strip_tags(params["Field25"].upcase)) : "NON",
+						:already_candidate => params["Field26"].match(/Non/).nil? ? fix_wufoo(strip_tags(params["Field35"].upcase)) : "NON",
+						:already_elected => params["Field34"]=="Oui" ? fix_wufoo(strip_tags(params["Field36"].upcase)) : "NON",
+						:website => fix_wufoo(strip_tags(params["Field13"])),
+						:twitter => fix_wufoo(strip_tags(params["Field15"])),
+						:facebook => fix_wufoo(strip_tags(params["Field14"])),
+						:photo_key => profile_pic,
+					}
+					insert_candidate=<<END
+INSERT INTO candidates (candidate_id,name,gender,country,zipcode,email,job,tel,program_theme,with_team,political_party,already_candidate,already_elected,website,twitter,facebook,photo,candidate_key) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,md5(random()::text)) RETURNING *
+END
+					res=API.pg.exec_params(insert_candidate,[
+						maj[:candidate_id],
+						maj[:name],
+						maj[:gender],
+						maj[:country],
+						maj[:zipcode],
+						maj[:email],
+						maj[:job],
+						maj[:tel],
+						maj[:program_theme],
+						maj[:with_team],
+						maj[:political_party],
+						maj[:already_candidate],
+						maj[:already_elected],
+						maj[:website],
+						maj[:twitter],
+						maj[:facebook],
+						maj[:photo_key]
+					])
+					raise "candidate could not be created" if res.num_tuples.zero?
+				rescue Exception=>e
+					STDERR.puts "Exception raised : #{e.message}"
+					res=nil
+				ensure
+					pg_close()
+				end
+				# 2. Slack notification
 				doc={}
 				doc[:firstName]=params["Field3"].capitalize unless params["Field3"].nil?
 				doc[:lastName]=params["Field4"].upcase unless params["Field4"].nil?
