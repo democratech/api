@@ -230,7 +230,14 @@ END
 					raise "candidate photo not updated: candidate not found" if res.num_tuples.zero?
 					candidate=res[0]
 					photo=candidate['photo']
-					photo="#{candidate['candidate_id']}.jpeg" if photo.nil? or photo.empty?
+					if photo.nil? or photo.empty? then
+						photo="#{candidate['candidate_id']}.jpeg"
+						update_candidate=<<END
+UPDATE candidates SET photo=$1 WHERE candidate_key=$2 RETURNING *
+END
+						res1=API.pg.exec_params(update_candidate,[photo,maj[:key]])
+						raise "candidate photo field not updated: candidate not found" if res1.num_tuples.zero?
+					end
 					upload_img=MiniMagick::Image.open(maj[:photo_url])
 					upload_img.resize "x300"
 					photo_path="/tmp/#{photo}"
