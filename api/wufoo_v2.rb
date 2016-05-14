@@ -74,7 +74,7 @@ module Democratech
 						STDERR.puts "#{key} already exists in S3 bucket. deleting previous object."
 						obj.delete
 					end
-					obj.upload_file(filename, acl:'public-read')
+					obj.upload_file(filename, acl:'public-read',cache_control:'public, max-age=14400')
 					return key
 				end
 			end
