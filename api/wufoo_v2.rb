@@ -143,12 +143,31 @@ END
 						maj[:photo_key]
 					])
 					raise "candidate could not be created" if res.num_tuples.zero?
+					candidate_key=res[0]['candidate_key']
 				rescue Exception=>e
 					STDERR.puts "Exception raised : #{e.message}"
 					res=nil
 				ensure
 					pg_close()
 				end
+				# 2. Email notification to the candidate with its admin page and instructions
+				message= {
+					:to=>[{
+						:email=> "#{maj[:email]}",
+						:name=> "#{maj[:name]}"
+					}],
+					:merge_vars=>[{
+						:rcpt=>"#{maj[:email]}",
+						:vars=>[ {:name=>"CANDIDATE_KEY",:content=>"#{candidate_key}"} ]
+					}]
+				}
+				begin
+					result=API.mandrill.messages.send_template("laprimaire-org-candidates-bienvenue",[],message)
+				rescue Mandrill::Error => e
+					msg="A mandrill error occurred: #{e.class} - #{e.message}"
+					STDERR.puts msg
+				end
+
 				# 2. Slack notification
 				doc={}
 				doc[:firstName]=params["Field3"].capitalize unless params["Field3"].nil?
