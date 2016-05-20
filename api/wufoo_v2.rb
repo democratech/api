@@ -102,7 +102,7 @@ module Democratech
 						upload_image(photo_path)
 					end
 					maj={
-						:candidate_id => ((rand()*1000000000000).to_i).to_s,
+						:candidate_id => uuid,
 						:name => fix_wufoo(strip_tags(params["Field3"]+' '+params["Field4"])),
 						:gender => params["Field32"]=="Un homme" ? "M" : "F",
 						:country => params["Field39"]=="Oui" ? "FRANCE" : params["Field42"],
