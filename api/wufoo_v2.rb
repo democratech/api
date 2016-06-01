@@ -555,6 +555,44 @@ END
 					error!(errors.join("\n"),400)
 				end
 			end
+
+			post 'signature' do
+				error!('401 Unauthorized', 401) unless authorized
+				errors=[]
+				notifs=[]
+
+				# 1. We read the new supporter info from the parameters
+				doc={}
+				doc[:firstname]=params["Field9"].capitalize unless params["Field9"].nil?
+				doc[:lastname]=params["Field10"].upcase unless params["Field10"].nil?
+				doc[:email]=params["Field1"].downcase unless params["Field1"].nil?
+				doc[:comment]=params["Field119"].upcase unless params["Field119"].nil?
+
+				new_signature="INSERT INTO appel_aux_maires (firstname,lastname,email,comment) VALUES ($1,$2,$3,$4) RETURNING *;"
+				res=API.pg.exec_params(new_signature,[doc[:firstname],doc[:lastname],doc[:email],doc[:comment]])
+				if not res.num_tuples.zero? then
+					notifs.push([
+						"Nouvelle signature pour l'appel aux maires ! %s %s : %s" % [doc[:firstname],doc[:lastname],doc[:comment]],
+						"supporteurs",
+						":memo:",
+						"pg"
+					])
+				else # if the supporter could not be insert in the db
+					notifs.push([
+						"Erreur lors de l'enregistrement d'une signature pour l'appel aux maires: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:comment],res.inspect],
+						"errors",
+						":scream:",
+						"pg"
+					])
+					errors.push('400 Supporter could not be registered')
+				end
+
+				# 4. We send the notifications and return
+				slack_notifications(notifs)
+				if not errors.empty? then
+					error!(errors.join("\n"),400)
+				end
+			end
 		end
 	end
 end
