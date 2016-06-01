@@ -54,6 +54,7 @@ GEM
       excon (>= 0.16.0, < 1.0)
       json (>= 1.7.7, < 2.0)
     mime-types (2.6.2)
+    mimemagic (0.3.1)
     mini_magick (4.4.0)
     minitest (5.8.2)
     mongo (2.0.6)
@@ -101,6 +102,7 @@ DEPENDENCIES
   grape (= 0.12.0)
   mailgun-ruby
   mandrill-api
+  mimemagic
   mini_magick
   mongo (~> 2.0.6)
   pg
