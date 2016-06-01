@@ -566,18 +566,28 @@ END
 				doc[:firstname]=params["Field9"].capitalize unless params["Field9"].nil?
 				doc[:lastname]=params["Field10"].upcase unless params["Field10"].nil?
 				doc[:email]=params["Field1"].downcase unless params["Field1"].nil?
-				doc[:comment]=params["Field119"].upcase unless params["Field119"].nil?
-
+				doc[:comment]=params["Field119"] unless params["Field119"].nil?
 				new_signature="INSERT INTO appel_aux_maires (firstname,lastname,email,comment) VALUES ($1,$2,$3,$4) RETURNING *;"
-				res=API.pg.exec_params(new_signature,[doc[:firstname],doc[:lastname],doc[:email],doc[:comment]])
-				if not res.num_tuples.zero? then
-					notifs.push([
-						"Nouvelle signature pour l'appel aux maires ! %s %s : %s" % [doc[:firstname],doc[:lastname],doc[:comment]],
-						"supporteurs",
-						":memo:",
-						"pg"
-					])
-				else # if the supporter could not be insert in the db
+				begin
+					pg_connect()
+					res=API.pg.exec_params(new_signature,[doc[:firstname],doc[:lastname],doc[:email],doc[:comment]])
+					if not res.num_tuples.zero? then
+						notifs.push([
+							"Nouvelle signature pour l'appel aux maires ! %s %s : %s" % [doc[:firstname],doc[:lastname],doc[:comment]],
+							"supporteurs",
+							":memo:",
+							"pg"
+						])
+					else # if the supporter could not be insert in the db
+						notifs.push([
+							"Erreur lors de l'enregistrement d'une signature pour l'appel aux maires: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:comment],res.inspect],
+							"errors",
+							":scream:",
+							"pg"
+						])
+						errors.push('400 Supporter could not be registered')
+					end
+				rescue
 					notifs.push([
 						"Erreur lors de l'enregistrement d'une signature pour l'appel aux maires: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:comment],res.inspect],
 						"errors",
@@ -585,6 +595,24 @@ END
 						"pg"
 					])
 					errors.push('400 Supporter could not be registered')
+				ensure
+					pg_close()
+				end
+
+				begin
+					message= {
+						:to=>[{
+							:email=> "#{doc[:email]}",
+							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
+						}],
+						:merge_vars=>[{
+							:rcpt=>"#{doc[:email]}"
+						}]
+					}
+					result=API.mandrill.messages.send_template("laprimaire-org-appel-aux-maires-merci",[],message)
+				rescue Mandrill::Error => e
+					msg="A mandrill error occurred: #{e.class} - #{e.message}"
+					STDERR.puts msg
 				end
 
 				# 4. We send the notifications and return
