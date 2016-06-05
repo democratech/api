@@ -563,9 +563,9 @@ END
 
 				# 1. We read the new supporter info from the parameters
 				doc={}
-				doc[:firstname]=params["Field9"].capitalize unless params["Field9"].nil?
-				doc[:lastname]=params["Field10"].upcase unless params["Field10"].nil?
-				doc[:email]=params["Field1"].downcase unless params["Field1"].nil?
+				doc[:firstname]=params["Field9"].capitalize.strip unless params["Field9"].nil?
+				doc[:lastname]=params["Field10"].upcase.strip unless params["Field10"].nil?
+				doc[:email]=params["Field1"].downcase.strip unless params["Field1"].nil?
 				doc[:comment]=params["Field119"] unless params["Field119"].nil?
 				new_signature="INSERT INTO appel_aux_maires (firstname,lastname,email,comment) VALUES ($1,$2,$3,$4) RETURNING *;"
 				begin
