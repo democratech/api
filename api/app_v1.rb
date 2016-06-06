@@ -44,7 +44,7 @@ END
 					res1=API.pg.exec(stats_candidates)
 					nb_candidates=res1[0]['nb_candidates']
 					nb_plebiscites=res1[0]['nb_citizens']
-					stats_citizens="SELECT count(*) as nb_citizens from citizens;"
+					stats_citizens="SELECT count(*) as nb_citizens from users;"
 					res2=API.pg.exec(stats_citizens)
 					nb_citizens=res2[0]['nb_citizens']
 				rescue Error => e
