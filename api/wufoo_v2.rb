@@ -578,6 +578,21 @@ END
 							":memo:",
 							"pg"
 						])
+						get_user_by_email=<<END
+SELECT z.*,c.slug,c.zipcode,c.departement,c.lat_deg,c.lon_deg FROM citizens AS z LEFT JOIN cities AS c ON (c.city_id=z.city_id) WHERE z.email=$1
+END
+						res1=API.pg.exec_params(get_user_by_email,[doc[:email]])
+						if res1.num_tuples.zero? then # meta user does not yet exists
+							insert_meta_user_from_signature=<<END
+insert into users (email,firstname,lastname,registered,tags) select a.email,a.firstname,a.lastname,a.signed as registered,ARRAY['appel_aux_maires']::text[] as tags from appel_aux_maires as a where a.email=$1 returning *;
+END
+							res2=Bot::Db.query(insert_meta_user_from_signature,[doc[:email]])
+						else # meta user already exists
+							update_meta_user_from_signature=<<END
+update users set last_updated=now(),tags=array_append(tags,'appel_aux_maires') where users.email=$1 returning *;
+END
+							res2=Bot::Db.query(update_meta_user_from_signature,[doc[:email]])
+						end
 					else # if the supporter could not be insert in the db
 						notifs.push([
 							"Erreur lors de l'enregistrement d'une signature pour l'appel aux maires: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:comment],res.inspect],
