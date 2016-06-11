@@ -555,6 +555,87 @@ END
 					error!(errors.join("\n"),400)
 				end
 			end
+
+			post 'signature' do
+				error!('401 Unauthorized', 401) unless authorized
+				errors=[]
+				notifs=[]
+
+				# 1. We read the new supporter info from the parameters
+				doc={}
+				doc[:firstname]=params["Field9"].capitalize.strip unless params["Field9"].nil?
+				doc[:lastname]=params["Field10"].upcase.strip unless params["Field10"].nil?
+				doc[:email]=params["Field1"].downcase.strip unless params["Field1"].nil?
+				doc[:comment]=params["Field119"] unless params["Field119"].nil?
+				new_signature="INSERT INTO appel_aux_maires (firstname,lastname,email,comment) VALUES ($1,$2,$3,$4) RETURNING *;"
+				begin
+					pg_connect()
+					res=API.pg.exec_params(new_signature,[doc[:firstname],doc[:lastname],doc[:email],doc[:comment]])
+					if not res.num_tuples.zero? then
+						notifs.push([
+							"Nouvelle signature pour l'appel aux maires ! %s %s : %s" % [doc[:firstname],doc[:lastname],doc[:comment]],
+							"supporteurs",
+							":memo:",
+							"pg"
+						])
+						get_user_by_email=<<END
+SELECT z.*,c.slug,c.zipcode,c.departement,c.lat_deg,c.lon_deg FROM citizens AS z LEFT JOIN cities AS c ON (c.city_id=z.city_id) WHERE z.email=$1
+END
+						res1=API.pg.exec_params(get_user_by_email,[doc[:email]])
+						if res1.num_tuples.zero? then # meta user does not yet exists
+							insert_meta_user_from_signature=<<END
+insert into users (email,firstname,lastname,registered,tags) select a.email,a.firstname,a.lastname,a.signed as registered,ARRAY['appel_aux_maires']::text[] as tags from appel_aux_maires as a where a.email=$1 returning *;
+END
+							res2=Bot::Db.query(insert_meta_user_from_signature,[doc[:email]])
+						else # meta user already exists
+							update_meta_user_from_signature=<<END
+update users set last_updated=now(),tags=array_append(tags,'appel_aux_maires') where users.email=$1 returning *;
+END
+							res2=Bot::Db.query(update_meta_user_from_signature,[doc[:email]])
+						end
+					else # if the supporter could not be insert in the db
+						notifs.push([
+							"Erreur lors de l'enregistrement d'une signature pour l'appel aux maires: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:comment],res.inspect],
+							"errors",
+							":scream:",
+							"pg"
+						])
+						errors.push('400 Supporter could not be registered')
+					end
+				rescue
+					notifs.push([
+						"Erreur lors de l'enregistrement d'une signature pour l'appel aux maires: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],doc[:comment],res.inspect],
+						"errors",
+						":scream:",
+						"pg"
+					])
+					errors.push('400 Supporter could not be registered')
+				ensure
+					pg_close()
+				end
+
+				begin
+					message= {
+						:to=>[{
+							:email=> "#{doc[:email]}",
+							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
+						}],
+						:merge_vars=>[{
+							:rcpt=>"#{doc[:email]}"
+						}]
+					}
+					result=API.mandrill.messages.send_template("laprimaire-org-appel-aux-maires-merci",[],message)
+				rescue Mandrill::Error => e
+					msg="A mandrill error occurred: #{e.class} - #{e.message}"
+					STDERR.puts msg
+				end
+
+				# 4. We send the notifications and return
+				slack_notifications(notifs)
+				if not errors.empty? then
+					error!(errors.join("\n"),400)
+				end
+			end
 		end
 	end
 end
