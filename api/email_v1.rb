@@ -76,6 +76,9 @@ module Democratech
 				end
 				slack_notifications(notifs) if not notifs.empty?
 			end
+
+			post 'mandrill' do
+			end
 		end
 	end
 end
