@@ -78,6 +78,40 @@ module Democratech
 			end
 
 			post 'mandrill' do
+				events=JSON.parse(params['mandrill_events'])
+				events.each do |e|
+					email=e['msg']['email']
+					template=e['msg']['template']
+					status={
+						'sent'=>2,
+						'spam'=>1,
+						'unsub'=>-1,
+						'bounce'=>-2,
+					}
+					query1="update users set email_status=$1, validation_level=(validation_level | $2) where email=$3"
+					query2="update users set email_status=$1, validation_level=(validation_level & $2) where email=$3"
+					begin
+						pg_connect()
+						case e['event'] # soft_bounce, open, click, reject are not handled
+						when 'send' then
+							#puts "send #{e['msg']['email']}"
+							res=API.pg.exec_params(query1,[status['sent'],1,e['msg']['email']])
+						when 'hard_bounce' then
+							#puts "hard bounce #{e['msg']['email']}"
+							res=API.pg.exec_params(query2,[status['bounce'],2,e['msg']['email']])
+						when 'spam' then
+							#puts "spam #{e['msg']['email']}"
+							res=API.pg.exec_params(query2,[status['spam'],2,e['msg']['email']])
+						when 'unsub' then
+							#puts "unsub #{e['msg']['email']}"
+							res=API.pg.exec_params(query2,[status['unsub'],2,e['msg']['email']])
+						end
+					rescue PG::Error=>e
+						return {"error"=>e.message}
+					ensure
+						pg_close()
+					end
+				end
 			end
 		end
 	end
