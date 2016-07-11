@@ -1,4 +1,4 @@
-![democratech logo](http://democratech.co/static/logo-dark-trbg-260x40.png)
+![LaPrimaire logo](https://s3.eu-central-1.amazonaws.com/laprimaire/laprimaire-small-logo.png)
 # Services API
 
 ## Context
