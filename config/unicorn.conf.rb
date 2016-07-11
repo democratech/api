@@ -8,7 +8,7 @@ APP_ROOT = File.expand_path(File.dirname(File.dirname(__FILE__)))
 
 # Use at least one worker per core if you're on a dedicated server,
 # more will usually help for _short_ waits on databases/caches.
-worker_processes 30
+worker_processes 4
 
 # Help ensure your application will always spawn in the symlinked
 # "current" directory that Capistrano sets up.
@@ -28,6 +28,7 @@ preload_app true
 if ENV['RACK_ENV']=='production' then
 	stderr_path "/var/log/unicorn/api.democratech.co.err.log"
 	stdout_path "/var/log/unicorn/api.democratech.co.log"
+	worker_processes 30
 	user 'www-data', 'www-data'
 end
 pid "%s/pid/pid" % [APP_ROOT]

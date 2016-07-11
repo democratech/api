@@ -16,6 +16,7 @@ PGHOST=DEBUG ? PGHOST_TEST : PGHOST_LIVE
 STR_KEY=DEBUG ? STRTEST : STRLIVE
 puts "connect to database : #{PGNAME} with user : #{PGUSER}"
 
+Algolia.init :application_id=>ALGOLIA_ID, :api_key=>ALGOLIA_KEY
 Mongo::Logger.logger.level = Logger::WARN
 Democratech::API.mg_client=Mailgun::Client.new(MGUNKEY)
 Democratech::API.mandrill=Mandrill::API.new(MANDRILLKEY)

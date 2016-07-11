@@ -103,5 +103,6 @@ module Democratech
 		mount ::Democratech::EmailV1
 		mount ::Democratech::CandidatV1
 		mount ::Democratech::AppV1
+		mount ::Democratech::CitizenV1
 	end
 end

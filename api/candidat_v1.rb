@@ -98,7 +98,7 @@ module Democratech
 SELECT c.candidate_id,c.name, count(*) as nb_soutiens FROM candidates as c INNER JOIN supporters as s ON (s.candidate_id=c.candidate_id) WHERE s.candidate_id=$1 GROUP BY c.candidate_id,c.name
 END
 					res=API.pg.exec_params(get_candidate,[candidate_id])
-				rescue
+				rescue PG::Error=>e
 					res=nil
 				ensure
 					pg_close()
@@ -151,7 +151,7 @@ UPDATE candidates SET birthday=$1 ,departement=$2, secteur=$3, job=$4 WHERE cand
 END
 					res=API.pg.exec_params(update_candidate,[maj[:birthday],maj[:departement],maj[:secteur],maj[:job],maj[:key]])
 					STDERR.puts "candidate info not updated : candidate not found" if res.num_tuples.zero?
-				rescue Exception=>e
+				rescue PG::Error=>e
 					STDERR.puts "Exception raised : #{e.message}"
 					res=nil
 				ensure
@@ -176,7 +176,7 @@ UPDATE candidates SET vision=$1 ,prio1=$2, prio2=$3, prio3=$4 WHERE candidate_ke
 END
 					res=API.pg.exec_params(update_candidate,[maj[:vision],maj[:prio1],maj[:prio2],maj[:prio3],maj[:key]])
 					STDERR.puts "candidate summary not updated : candidate not found" if res.num_tuples.zero?
-				rescue Exception=>e
+				rescue PG::Error=>e
 					STDERR.puts "Exception raised : #{e.message}"
 					res=nil
 				ensure
@@ -191,6 +191,7 @@ END
 					maj={
 						:trello => fix_wufoo(strip_tags(params["Field8"])),
 						:website => fix_wufoo(strip_tags(params["Field1"])),
+						:video => fix_wufoo(strip_tags(params["Field15"])),
 						:facebook => fix_wufoo(strip_tags(params["Field2"])),
 						:twitter => fix_wufoo(strip_tags(params["Field3"])),
 						:linkedin => fix_wufoo(strip_tags(params["Field4"])),
@@ -202,11 +203,11 @@ END
 						:email => fix_wufoo(strip_tags(params["Field11"]))
 					}
 					update_candidate=<<END
-UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8, youtube=$9 WHERE candidate_key=$10 RETURNING *
+UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8, youtube=$9, video=$10 WHERE candidate_key=$11 RETURNING *
 END
-					res=API.pg.exec_params(update_candidate,[maj[:trello],maj[:website],maj[:facebook],maj[:twitter],maj[:linkedin],maj[:blog],maj[:instagram],maj[:wikipedia],maj[:youtube],maj[:key]])
+					res=API.pg.exec_params(update_candidate,[maj[:trello],maj[:website],maj[:facebook],maj[:twitter],maj[:linkedin],maj[:blog],maj[:instagram],maj[:wikipedia],maj[:youtube],maj[:video],maj[:key]])
 					STDERR.puts "candidate links not updated : candidate not found" if res.num_tuples.zero?
-				rescue Exception=>e
+				rescue PG::Error=>e
 					STDERR.puts "Exception raised : #{e.message}"
 					res=nil
 				ensure
@@ -244,7 +245,7 @@ END
 					photo_path="/tmp/#{photo}"
 					upload_img.write(photo_path)
 					upload_image(photo_path)
-				rescue Exception=>e
+				rescue PG::Error=>e
 					STDERR.puts "Exception raised : #{e.message}"
 					res=nil
 				ensure
