@@ -202,6 +202,7 @@ END
 						:key => fix_wufoo(strip_tags(params["Field9"])),
 						:email => fix_wufoo(strip_tags(params["Field11"]))
 					}
+					maj[:video]=maj[:video].gsub('watch?v=','embed/') unless maj[:video].nil?
 					update_candidate=<<END
 UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8, youtube=$9, video=$10 WHERE candidate_key=$11 RETURNING *
 END
