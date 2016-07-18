@@ -276,7 +276,7 @@ END
 					res=API.pg.exec_params(new_signature,[doc[:firstname],doc[:lastname],doc[:email]])
 					if not res.num_tuples.zero? then
 						notifs.push([
-							"Nouvel inscrit suite à la campagne #NousPresident  ! %s %s : %s" % [doc[:firstname],doc[:lastname]],
+							"Nouvel inscrit suite à la campagne #NousPresident  ! %s %s" % [doc[:firstname],doc[:lastname]],
 							"supporteurs",
 							":memo:",
 							"pg"
@@ -298,7 +298,7 @@ END
 						end
 					else # if the supporter could not be insert in the db
 						notifs.push([
-							"Erreur lors de l'enregistrement d'une signature pour la campagne #NousPresident: %s (%s, %s) : %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],res.inspect],
+							"Erreur lors de l'enregistrement d'une signature pour la campagne #NousPresident: %s (%s, %s)\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],res.inspect],
 							"errors",
 							":scream:",
 							"pg"
@@ -307,7 +307,7 @@ END
 					end
 				rescue PG::Error => e
 					notifs.push([
-						"Erreur lors de l'enregistrement d'une signature pour la campagne #NousPresident: %s (%s, %s) : %s\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect],
+						"Erreur lors de l'enregistrement d'une signature pour la campagne #NousPresident: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect],
 						"errors",
 						":scream:",
 						"pg"
