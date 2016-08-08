@@ -143,13 +143,14 @@ END
 						:departement => strip_tags(params["Field9"]),
 						:secteur => strip_tags(params["Field12"]),
 						:job => strip_tags(params["Field17"]),
+						:bio => strip_tags(params["Field20"]),
 						:key => strip_tags(params["Field15"]),
 						:email => strip_tags(params["Field18"])
 					}
 					update_candidate=<<END
-UPDATE candidates SET birthday=$1 ,departement=$2, secteur=$3, job=$4 WHERE candidate_key=$5 RETURNING *
+UPDATE candidates SET birthday=$1 ,departement=$2, secteur=$3, job=$4, bio=$5 WHERE candidate_key=$6 RETURNING *
 END
-					res=API.pg.exec_params(update_candidate,[maj[:birthday],maj[:departement],maj[:secteur],maj[:job],maj[:key]])
+					res=API.pg.exec_params(update_candidate,[maj[:birthday],maj[:departement],maj[:secteur],maj[:job],maj[:bio],maj[:key]])
 					STDERR.puts "candidate info not updated : candidate not found" if res.num_tuples.zero?
 				rescue PG::Error=>e
 					STDERR.puts "Exception raised : #{e.message}"
