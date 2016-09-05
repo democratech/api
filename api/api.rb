@@ -81,13 +81,23 @@ module Democratech
 			end
 
 			def pg_connect()
-				Democratech::API.pg=PG.connect(
-					"dbname"=>PGNAME,
-					"user"=>PGUSER,
-					"password"=>PGPWD,
-					"host"=>PGHOST,
-					"port"=>PGPORT
-				)
+				if ::DEBUG then
+					Democratech::API.pg=PG.connect(
+						"dbname"=>PGNAME_TEST,
+						"user"=>PGUSER_TEST,
+						"password"=>PGPWD_TEST,
+						"host"=>PGHOST,
+						"port"=>PGPORT
+					)
+				else
+					Democratech::API.pg=PG.connect(
+						"dbname"=>PGNAME,
+						"user"=>PGUSER,
+						"password"=>PGPWD,
+						"host"=>PGHOST,
+						"port"=>PGPORT
+					)
+				end
 			end
 
 			def pg_close()
@@ -95,6 +105,7 @@ module Democratech
 			end
 		end
 
+		# mount ::Democratech::AuthV1
 		mount ::Democratech::WufooV2
 		mount ::Democratech::StripeV2
 		mount ::Democratech::SupporteursV1

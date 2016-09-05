@@ -51,8 +51,9 @@ module Democratech
 					return text.gsub(/<\/?[^>]*>/, "")
 				end
 
-				def fix_wufoo(url)
+				def fix_wufoo(url,remove_params=true)
 					url.gsub!(':/','://') if url.match(/https?:\/\//).nil?
+					url=url.split('?')[0] if remove_params
 					return url
 				end
 			end
@@ -192,7 +193,7 @@ END
 					maj={
 						:trello => fix_wufoo(strip_tags(params["Field8"])),
 						:website => fix_wufoo(strip_tags(params["Field1"])),
-						:video => fix_wufoo(strip_tags(params["Field15"])),
+						:video => fix_wufoo(strip_tags(params["Field15"]),false),
 						:facebook => fix_wufoo(strip_tags(params["Field2"])),
 						:twitter => fix_wufoo(strip_tags(params["Field3"])),
 						:linkedin => fix_wufoo(strip_tags(params["Field4"])),
@@ -250,6 +251,67 @@ END
 				rescue PG::Error=>e
 					STDERR.puts "Exception raised : #{e.message}"
 					res=nil
+				ensure
+					pg_close()
+				end
+			end
+
+			delete 'article/:id' do
+				begin
+					pg_connect()
+					candidate_id=params['cid']
+					raise "key parameter missing" if candidate_id.nil? 
+					delete_article=<<END
+DELETE FROM articles WHERE article_id=$1 AND candidate_id=$2 RETURNING *
+END
+					res=API.pg.exec_params(delete_article,[params[:id],candidate_id])
+					raise "article not created : candidate not found" if res.num_tuples.zero?
+				rescue PG::Error=>e
+					STDERR.puts "DB Exception raised : #{e.message}"
+					status 400
+				rescue StandardError =>e
+					STDERR.puts "STD Exception raised : #{e.message}"
+					status 400
+				ensure
+					pg_close()
+				end
+				return {}
+			end
+
+			post 'article' do
+				error!('401 Unauthorized', 401) unless authorized
+				begin
+					pg_connect()
+					date_published=params["Field113"][0..3]+"-"+params["Field113"][4..5]+"-"+params["Field113"][6..7]
+					maj={
+						:title => fix_wufoo(strip_tags(params["Field120"])),
+						:summary => fix_wufoo(strip_tags(params["Field122"])),
+						:source_url => fix_wufoo(strip_tags(params["Field112"])),
+						:theme => fix_wufoo(strip_tags(params["Field1"])),
+						:subtheme_planete => fix_wufoo(strip_tags(params["Field5"])),
+						:subtheme_societe => fix_wufoo(strip_tags(params["Field4"])),
+						:subtheme_economie => fix_wufoo(strip_tags(params["Field6"])),
+						:subtheme_institutions => fix_wufoo(strip_tags(params["Field7"])),
+						:date_published => date_published,
+						:key => fix_wufoo(strip_tags(params["Field115"])),
+						:email => fix_wufoo(strip_tags(params["Field118"]))
+					}
+					maj[:subtheme]=maj[:theme] if maj[:theme]=='Biographie'
+					maj[:subtheme]=maj[:subtheme_planete] unless maj[:subtheme_planete].empty?
+					maj[:subtheme]=maj[:subtheme_societe] unless maj[:subtheme_societe].empty?
+					maj[:subtheme]=maj[:subtheme_economie] unless maj[:subtheme_economie].empty?
+					maj[:subtheme]=maj[:subtheme_institutions] unless maj[:subtheme_institutions].empty?
+					insert_article=<<END
+INSERT INTO articles (title,summary,candidate_id,source_url,published_url,theme_id,date_published) SELECT $1,$2,c.candidate_id,$3,$3,t.theme_id,$4 FROM (SELECT ca.candidate_id FROM candidates as ca WHERE ca.candidate_key=$6) as c, (SELECT theme_id FROM articles_themes WHERE name=$5) as t RETURNING *
+END
+					res=API.pg.exec_params(insert_article,[maj[:title],maj[:summary],maj[:source_url],maj[:date_published],maj[:subtheme],maj[:key]])
+					raise "article not created : candidate not found" if res.num_tuples.zero?
+				rescue PG::Error=>e
+					STDERR.puts "Exception raised : #{e.message}\n#{params.inspect}"
+					status 400
+				rescue StandardError =>e
+					STDERR.puts "STD Exception raised : #{e.message}\n#{params.inspect}"
+					status 400
 				ensure
 					pg_close()
 				end

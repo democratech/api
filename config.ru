@@ -3,12 +3,10 @@ require File.expand_path('../config/environment', __FILE__)
 use Rack::Cors do
 	allow do
 		origins '*'
-		resource '*', headers: :any, methods: :get
+		resource '*', headers: :any, methods: [:get,:delete]
 	end
 end
 
-DEBUG=(ENV['RACK_ENV']!='production')
-PRODUCTION=(ENV['RACK_ENV']=='production')
 PGPWD=DEBUG ? PGPWD_TEST : PGPWD_LIVE
 PGNAME=DEBUG ? PGNAME_TEST : PGNAME_LIVE
 PGUSER=DEBUG ? PGUSER_TEST : PGUSER_LIVE
