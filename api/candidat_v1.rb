@@ -297,10 +297,10 @@ END
 						:email => fix_wufoo(strip_tags(params["Field118"]))
 					}
 					maj[:subtheme]=maj[:theme] if maj[:theme]=='Biographie'
-					maj[:subtheme]=maj[:subtheme_planete] unless maj[:subtheme_planete].empty?
-					maj[:subtheme]=maj[:subtheme_societe] unless maj[:subtheme_societe].empty?
-					maj[:subtheme]=maj[:subtheme_economie] unless maj[:subtheme_economie].empty?
-					maj[:subtheme]=maj[:subtheme_institutions] unless maj[:subtheme_institutions].empty?
+					maj[:subtheme]=maj[:subtheme_planete] unless maj[:subtheme_planete].nil?
+					maj[:subtheme]=maj[:subtheme_societe] unless maj[:subtheme_societe].nil?
+					maj[:subtheme]=maj[:subtheme_economie] unless maj[:subtheme_economie].nil?
+					maj[:subtheme]=maj[:subtheme_institutions] unless maj[:subtheme_institutions].nil?
 					insert_article=<<END
 INSERT INTO articles (title,summary,candidate_id,source_url,published_url,theme_id,date_published) SELECT $1,$2,c.candidate_id,$3,$3,t.theme_id,$4 FROM (SELECT ca.candidate_id FROM candidates as ca WHERE ca.candidate_key=$6) as c, (SELECT theme_id FROM articles_themes WHERE name=$5) as t RETURNING *
 END

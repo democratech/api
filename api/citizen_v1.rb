@@ -104,6 +104,87 @@ module Democratech
 				end
 				return json
 			end
+
+			post 'add' do
+				error!('401 Unauthorized', 401) unless authorized
+				errors=[]
+				notifs=[]
+
+				# 1. We read the new supporter info from the parameters
+				doc={}
+				doc[:firstname]=params["Field9"].capitalize.strip unless params["Field9"].nil?
+				doc[:lastname]=params["Field10"].upcase.strip unless params["Field10"].nil?
+				doc[:referer]=params["Field12"].strip unless params["Field12"].nil?
+				doc[:candidate]=params["Field14"].strip unless params["Field14"].nil?
+				doc[:email]=params["Field1"].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, '') unless params["Field1"].nil?
+				begin
+					pg_connect()
+					get_user_by_email=<<END
+SELECT z.*,c.slug,c.zipcode,c.departement,c.lat_deg,c.lon_deg FROM users AS z LEFT JOIN cities AS c ON (c.city_id=z.city_id) WHERE z.email=$1
+END
+					res=API.pg.exec_params(get_user_by_email,[doc[:email]])
+					if res.num_tuples.zero? then # user does not yet exists
+						new_user=<<END
+INSERT INTO users (email,firstname,lastname,user_key,referal_code,referer) VALUES ($1,$2,$3,md5(random()::text),substring(md5($1) from 1 for 8),$4) returning *;
+END
+						res1=API.pg.exec_params(new_user,[doc[:email],doc[:firstname],doc[:lastname],doc[:referer]])
+						raise "New user was not registered" if res1.num_tuples.zero?
+						from_candidat=""
+						if not doc[:candidate].nil? then # user has registered from a candidate page
+							new_follower="INSERT INTO followers (candidate_id,email) VALUES ($1,$2)"
+							res2=API.pg.exec_params(new_follower,[doc[:candidate],doc[:email]])
+							raise "New follower was not registered" if res1.num_tuples.zero?
+							from_candidat="à partir d'une page candidat "
+						end
+						with_referer= doc[:referer].nil? ? "":"avec referal code "
+						notifs.push([
+							"Nouvel inscrit à LaPrimaire.org #{from_candidat}#{with_referer}! %s %s" % [doc[:firstname],doc[:lastname]],
+							"supporteurs",
+							":memo:",
+							"pg"
+						])
+					end
+				rescue StandardError => e
+					notifs.push([
+						"Erreur (PG::Error) lors de l'enregistrement d'un citoyen: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect],
+						"errors",
+						":scream:",
+						"pg"
+					])
+					errors.push('400 Supporter could not be registered')
+				rescue PG::Error => e
+					notifs.push([
+						"Erreur (PG::Error) lors de l'enregistrement d'un citoyen: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect],
+						"errors",
+						":scream:",
+						"pg"
+					])
+					errors.push('400 Supporter could not be registered')
+				ensure
+					pg_close()
+				end
+				begin
+					message= {
+						:to=>[{
+							:email=> "#{doc[:email]}",
+							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
+						}],
+						:merge_vars=>[{
+							:rcpt=>"#{doc[:email]}"
+						}]
+					}
+					result=API.mandrill.messages.send_template("laprimaire-org-bienvenue",[],message)
+				rescue Mandrill::Error => e
+					msg="A mandrill error occurred: #{e.class} - #{e.message}"
+					STDERR.puts msg
+				end
+
+				# 4. We send the notifications and return
+				slack_notifications(notifs)
+				if not errors.empty? then
+					error!(errors.join("\n"),400)
+				end
+			end
 		end
 	end
 end
