@@ -69,6 +69,7 @@ module Democratech
 					pg_connect()
 					email=params["Field1"]
 					candidate_id=params["Field3"]
+					phase=params["Field5"]
 					return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
 					notifs=[]
 					email=email.downcase
@@ -91,12 +92,16 @@ module Democratech
 										:name=>"NB_SOUTIENS",
 										:content=>"doe"
 									},
+									{
+										:name=>"SLUG",
+										:content=>"doe"
+									}
 								]
 							}
 						]
 					}
 					get_candidate=<<END
-SELECT c.candidate_id,c.name, count(*) as nb_soutiens FROM candidates as c INNER JOIN supporters as s ON (s.candidate_id=c.candidate_id) WHERE s.candidate_id=$1 GROUP BY c.candidate_id,c.name
+SELECT c.candidate_id,c.name,c.slug,count(*) as nb_soutiens FROM candidates as c INNER JOIN supporters as s ON (s.candidate_id=c.candidate_id) WHERE s.candidate_id=$1 GROUP BY c.candidate_id,c.name,c.slug
 END
 					res=API.pg.exec_params(get_candidate,[candidate_id])
 				rescue PG::Error=>e
@@ -113,8 +118,13 @@ END
 					msg[:merge_vars][0][:vars][0][:content]=candidate["name"]
 					msg[:merge_vars][0][:vars][1][:content]=candidate["candidate_id"]
 					msg[:merge_vars][0][:vars][2][:content]=candidate["nb_soutiens"]
+					msg[:merge_vars][0][:vars][2][:content]=candidate["slug"]
 					begin
-						result=API.mandrill.messages.send_template("laprimaire-org-support-candidate",[],msg)
+						if phase=="1" then
+							result=API.mandrill.messages.send_template("laprimaire-org-support-candidate",[],msg)
+						else
+							result=API.mandrill.messages.send_template("laprimaire-org-support-candidate-phase-2",[],msg)
+						end
 						notifs.push([
 							"Nouveau email de support pour #{candidate['name']} demandé !",
 							"social_media",
