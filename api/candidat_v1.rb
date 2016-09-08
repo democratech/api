@@ -118,7 +118,7 @@ END
 					msg[:merge_vars][0][:vars][0][:content]=candidate["name"]
 					msg[:merge_vars][0][:vars][1][:content]=candidate["candidate_id"]
 					msg[:merge_vars][0][:vars][2][:content]=candidate["nb_soutiens"]
-					msg[:merge_vars][0][:vars][2][:content]=candidate["slug"]
+					msg[:merge_vars][0][:vars][3][:content]=candidate["slug"]
 					begin
 						if phase=="1" then
 							result=API.mandrill.messages.send_template("laprimaire-org-support-candidate",[],msg)
@@ -215,6 +215,7 @@ END
 						:email => fix_wufoo(strip_tags(params["Field11"]))
 					}
 					maj[:video]=maj[:video].gsub('watch?v=','embed/') unless maj[:video].nil?
+					maj[:video]=maj[:video].gsub('youtu.be/','www.youtube.com/embed/') unless maj[:video].nil?
 					update_candidate=<<END
 UPDATE candidates SET trello=$1 ,website=$2, facebook=$3, twitter=$4, linkedin=$5, blog=$6, instagram=$7, wikipedia=$8, youtube=$9, video=$10 WHERE candidate_key=$11 RETURNING *
 END
