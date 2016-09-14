@@ -307,7 +307,7 @@ END
 						:key => fix_wufoo(strip_tags(params["Field115"])),
 						:email => fix_wufoo(strip_tags(params["Field118"]))
 					}
-					maj[:subtheme]=maj[:theme] if maj[:theme]=='Biographie'
+					maj[:subtheme]=maj[:theme] if (maj[:theme]=='Biographie' or maj[:theme]=='Politique générale' or maj[:theme]=='Blog')
 					maj[:subtheme]=maj[:subtheme_planete] unless maj[:subtheme_planete].nil?
 					maj[:subtheme]=maj[:subtheme_societe] unless maj[:subtheme_societe].nil?
 					maj[:subtheme]=maj[:subtheme_economie] unless maj[:subtheme_economie].nil?
