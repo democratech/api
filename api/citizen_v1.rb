@@ -185,6 +185,22 @@ END
 					error!(errors.join("\n"),400)
 				end
 			end
+
+			post 'tel' do
+        to = params["to"]
+        message = params["body"]
+
+        client = Twilio::REST::Client.new(
+          TWILIO_ACCOUNT_SID,
+          TWILIO_AUTH_TOKEN
+        )
+
+        client.messages.create(
+          to: to,
+          from: TWILIO_PHONE_FROM,
+          body: message
+        )
+      end
 		end
 	end
 end

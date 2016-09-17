@@ -106,14 +106,14 @@ module Democratech
 		end
 
 		# mount ::Democratech::AuthV1
-		mount ::Democratech::WufooV2
-		mount ::Democratech::StripeV2
-		mount ::Democratech::SupporteursV1
-		mount ::Democratech::StripeV1
-		mount ::Democratech::WufooV1
+		# mount ::Democratech::WufooV2
+		# mount ::Democratech::StripeV2
+		# mount ::Democratech::SupporteursV1
+		# mount ::Democratech::StripeV1
+		# mount ::Democratech::WufooV1
 		mount ::Democratech::EmailV1
-		mount ::Democratech::CandidatV1
-		mount ::Democratech::AppV1
+		# mount ::Democratech::CandidatV1
+		# mount ::Democratech::AppV1
 		mount ::Democratech::CitizenV1
 	end
 end
