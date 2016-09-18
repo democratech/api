@@ -187,20 +187,65 @@ END
 			end
 
 			post 'tel' do
-        to = params["to"]
-        message = params["body"]
+				errors=[]
+				tel = params["tel"]
+				STDOUT.puts "Numéro de téléphone reçu: #{tel}"
 
-        client = Twilio::REST::Client.new(
-          TWILIO_ACCOUNT_SID,
-          TWILIO_AUTH_TOKEN
-        )
+				# check mobile network code
+				mobile_network_name = ""
+				mobile_network_code = ""
+				uri = URI('https://lookups.twilio.com/v1/PhoneNumbers/' + CGI::escape(tel) + '?Type=carrier&Type=caller-name')
 
-        client.messages.create(
-          to: to,
-          from: TWILIO_PHONE_FROM,
-          body: message
-        )
+				Net::HTTP.start(uri.host, uri.port,
+				  :use_ssl => uri.scheme == 'https', 
+				  :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+
+				  request = Net::HTTP::Get.new uri.request_uri
+				  request.basic_auth TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+
+				  response = http.request request # Net::HTTPResponse object
+
+				  # STDOUT.puts response.body
+
+				  my_hash = JSON.parse(response.body)
+				  mobile_network_name = my_hash["carrier"]["name"]
+				  mobile_network_code = my_hash["carrier"]["mobile_network_code"]
+				end
+
+				NETWORK_CODE_ORANGE = "01"
+				NETWORK_CODE_SFR = "10"
+				NETWORK_CODE_FREE = "15"
+
+				valid_codes = [NETWORK_CODE_FREE, NETWORK_CODE_SFR, NETWORK_CODE_FREE]
+				# si mobile network code est valide on envoie le SMS
+				if valid_codes.include?(mobile_network_code) then
+					STDOUT.puts "Code opérateur (#{mobile_network_code}) valide"
+	        
+	        confirm_code = '%04d' % rand(10 ** 4)
+	        confirm_msg = "Laprimaire.org - Code de confirmation: #{confirm_code}"
+
+					STDOUT.puts "Envoi du SMS avec le code de confirmation #{confirm_code}"
+
+	        client = Twilio::REST::Client.new(
+	          TWILIO_ACCOUNT_SID,
+	          TWILIO_AUTH_TOKEN
+	        )
+
+	        client.messages.create(
+	          to: tel,
+	          from: TWILIO_PHONE_FROM,
+	          body: confirm_msg
+	        )
+				else
+					STDERR.puts "Code opérateur (#{mobile_network_code}) non valide"
+					msg = "Votre opérateur téléphonique n'est pas valable pour l'authentification à la plateforme Laprimaire.org."
+					errors.push(msg)
+				end
+
+				if not errors.empty? then
+					error!(errors.join("\n"),500)
+				end
       end
-		end
+    end
 	end
 end
