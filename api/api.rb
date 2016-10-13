@@ -106,6 +106,7 @@ module Democratech
 		end
 
 		# mount ::Democratech::AuthV1
+		mount ::Democratech::VoteV1
 		mount ::Democratech::WufooV2
 		mount ::Democratech::StripeV2
 		mount ::Democratech::SupporteursV1
