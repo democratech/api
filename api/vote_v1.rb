@@ -44,6 +44,10 @@ module Democratech
 			get 'casted' do
 				return params
 			end
+
+			post 'casted' do
+				return params
+			end
 		end
 	end
 end
