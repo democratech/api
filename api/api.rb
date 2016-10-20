@@ -114,8 +114,8 @@ module Democratech
 		mount ::Democratech::StripeV1
 		mount ::Democratech::WufooV1
 		mount ::Democratech::EmailV1
-		# mount ::Democratech::CandidatV1
-		# mount ::Democratech::AppV1
+		mount ::Democratech::CandidatV1
+		mount ::Democratech::AppV1
 		mount ::Democratech::CitizenV1
 		mount ::Democratech::Log
 	end
