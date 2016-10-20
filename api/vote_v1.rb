@@ -42,10 +42,12 @@ module Democratech
 			end
 
 			get 'casted' do
+				API.log.warn "Vote casted (GET) #{params}"
 				return params
 			end
 
 			post 'casted' do
+				API.log.warn "Vote casted (POST) #{params}"
 				return params
 			end
 		end

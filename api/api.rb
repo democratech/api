@@ -22,11 +22,12 @@ module Democratech
 	class API < Grape::API
 		format :json
 		class << self
-			attr_accessor :db, :mg_client, :mandrill, :pg, :aws
+			attr_accessor :db, :mg_client, :mandrill, :pg, :aws, :log
 		end
 
 		get do
 			# DO NOT DELETE used to test the api is live
+			API.debug.info "API test OK"
 			return {"api"=>"ok"}
 		end
 
@@ -116,5 +117,6 @@ module Democratech
 		mount ::Democratech::CandidatV1
 		mount ::Democratech::AppV1
 		mount ::Democratech::CitizenV1
+		mount ::Democratech::Log
 	end
 end
