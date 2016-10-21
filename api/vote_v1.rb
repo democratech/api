@@ -51,8 +51,14 @@ module Democratech
 				status=params['event']['status']
 				voteId=params['event']['vote']['id']
 				API.log.debug "hash #{hash}\nappId #{appId}\nvoteId #{voteId}"
-				return {"error"=>"invalid token"} if (hash.nil? or appId!=COCORICO_APP_ID)
-				return {"msg"=>"vote has not been updated (status:#{status})"} if status!="success"
+				if (hash.nil? or appId!=COCORICO_APP_ID) then
+					API.log.error "Error : invalid token received :\nAppId #{appId}\nhash #{hash}"
+					return {"error"=>"invalid token"} 
+				end
+				if status!="success" then
+					API.log.error "Error : unsuccesful vote status recevied :\nAppId #{appId}\nhash #{hash}"
+					return {"msg"=>"vote has not been updated (status:#{status})"}
+				end
 				begin
 					pg_connect()
 					update=<<END
