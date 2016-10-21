@@ -27,7 +27,7 @@ module Democratech
 
 		get do
 			# DO NOT DELETE used to test the api is live
-			API.debug.info "API test OK"
+			API.log.debug "API test OK"
 			return {"api"=>"ok"}
 		end
 
