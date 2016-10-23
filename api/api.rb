@@ -117,6 +117,5 @@ module Democratech
 		mount ::Democratech::CandidatV1
 		mount ::Democratech::AppV1
 		mount ::Democratech::CitizenV1
-		mount ::Democratech::Log
 	end
 end

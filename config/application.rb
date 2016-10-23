@@ -8,5 +8,4 @@ Dir[File.expand_path('../../api/*_v*.rb', __FILE__)].each do |f|
 	require f
 end
 
-require 'log'
 require 'api'
