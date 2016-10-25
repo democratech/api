@@ -18,6 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 =end
 
+require 'digest'
+require 'date'
+
 module Democratech
 	class AuthV1 < Grape::API
 		version ['v1','v2']
@@ -30,6 +33,10 @@ module Democratech
 
 		resource :auth do
 			helpers do
+				def strip_tags(text)
+					return text.gsub(/<\/?[^>]*>/, "")
+				end
+
 				def get_citizen(user_key)
 					user_key_lookup=<<END
 SELECT c.telegram_id,c.firstname,c.lastname,c.email,c.reset_code,c.registered,c.country,c.user_key,c.validation_level,c.birthday,t.*,ci.zipcode,ci.name as city,ci.population,ci.departement
@@ -39,6 +46,36 @@ LEFT JOIN telephones AS t ON (t.international=c.telephone)
 WHERE c.user_key=$1
 END
 					res=API.pg.exec_params(user_key_lookup,[user_key])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def update_citizen(citoyen,infos)
+					update="UPDATE users SET #{infos['key']}=$2 WHERE user_key=$1"
+					res=API.pg.exec_params(update,[citoyen['user_key'],infos['val']])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def get_user_agent()
+					hash=Digest::SHA256.hexdigest(request.user_agent)
+					get_ua="SELECT * FROM user_agents WHERE useragent_hash=$1"
+					res=API.pg.exec_params(get_ua,[hash])
+					if res.num_tuples.zero? then
+						new_ua="INSERT INTO user_agents (useragent_hash,useragent_raw) VALUES ($1,$2) RETURNING *"
+						res=API.pg.exec_params(new_ua,[hash,request.user_agent])
+					end
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def track_step(citoyen,step,ballot_id=nil)
+					ua=get_user_agent()
+					track_step="INSERT INTO auth_history (email,useragent_id,ballot_id,ip_address,ip_forwarded,step) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *"
+					res=API.pg.exec_params(track_step,[citoyen['email'],ua['useragent_id'],ballot_id,request.ip,request.env["HTTP_X_FORWARDED_FOR"],step])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def verify_email(citoyen)
+					verify_email="UPDATE users SET validation_level=(validation_level|1) WHERE user_key=$1 AND (validation_level&1)=0 RETURNING *"
+					res=API.pg.exec_params(verify_email,[citoyen['user_key']])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
@@ -54,7 +91,6 @@ END
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
-
 				def register_phone(infos)
 					phone_register=<<END
 WITH countries AS (SELECT dial_code FROM countries WHERE iso2=$3) INSERT INTO telephones (international,national,country_code,prefix) SELECT $1,$2,$3,countries.dial_code FROM countries RETURNING *
@@ -62,6 +98,7 @@ END
 					res=API.pg.exec_params(phone_register,[infos['phone_number'],infos['national_format'],infos['country_code']])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
+
 				def update_user_with_phone(citoyen,number)
 					update_tel="UPDATE users SET telephone=$1 WHERE user_key=$2 RETURNING *"
 					res=API.pg.exec_params(update_tel,[number,citoyen['user_key']])
@@ -71,8 +108,57 @@ END
 			end
 
 			get do
-				# DO NOT DELETE used to test the api is live
-				return {"api_version"=>"auth/v1"}
+				return {"api_version"=>"auth/v1"} # DO NOT DELETE used to test the api is live
+			end
+
+			get 'step/:user_key' do
+				step=params['step']
+				steps=["verif_email","firstname","lastname","city","birthday","phone","verif_phone","facebook","ballot_creation"]
+				return {"error"=>"missing step"} if step.nil?
+				return {"error"=>"unknown step"} if !steps.include?(step)
+				pg_connect()
+				answer={"step"=>nil}
+				begin
+					user_key=params['user_key']
+					citoyen=get_citizen(user_key)
+					if citoyen.nil? then
+						status 403 
+						return {"error"=>"unknown_user"}
+					end
+					answer["step"]=step if !track_step(citoyen,step).nil?
+				rescue PG::Error=>e
+					status 500
+					API.log.error "step/#{step} PG error #{e.message}"
+				ensure
+					pg_close()
+				end
+				return answer
+			end
+
+			get 'email/verif/:user_key' do
+				pg_connect()
+				answer={"verified"=>"no"}
+				begin
+					user_key=params['user_key']
+					citoyen=get_citizen(user_key)
+					return {"info"=>"already_verified"} if (citoyen['validation_level'].to_i&1)==1
+					if citoyen.nil? then
+						status 403 
+						return {"error"=>"unknown_user"}
+					end
+					updated_citoyen=verify_email(citoyen)
+					if updated_citoyen.nil? then
+						API.log.error "email/verif unable to verify citizen email #{citoyen['email']}"
+						return answer
+					end
+					answer["verified"]="yes"
+				rescue PG::Error=>e
+					status 500
+					API.log.error "email/verif PG error #{e.message}"
+				ensure
+					pg_close()
+				end
+				return answer
 			end
 
 			get 'phone/lookup/:user_key' do
@@ -152,35 +238,38 @@ END
 				return answer
 			end
 
-			get 'init/:user_key' do
-			end
-
-			post 'firstname/:user_key' do
-			end
-
-			post 'lastname/:user_key' do
+			get 'update/:user_key' do
+				pg_connect()
+				answer={}
+				key=params['key']
+				val=strip_tags(params['val'])
+				keys=["firstname","lastname","birthday"]
+				return {"error"=>"missing value"} if (val.nil? || val=="")
+				return {"error"=>"too large request"} if val.length>25
+				return {"error"=>"erroneous request"} if !keys.include?(key)
 				begin
-					pg_connect()
-					stats_candidates=<<END
-SELECT count(case when c.verified then 1 else null end) as nb_candidates, count(c.candidate_id)-count(case when c.verified then 1 else null end) as nb_citizens
-FROM candidates as c;
-END
-					res1=API.pg.exec(stats_candidates)
-					nb_candidates=res1[0]['nb_candidates']
-					nb_plebiscites=res1[0]['nb_citizens']
-					stats_citizens="SELECT count(*) as nb_citizens from users;"
-					res2=API.pg.exec(stats_citizens)
-					nb_citizens=res2[0]['nb_citizens']
-				rescue Error => e
-					return {"error"=>e.message}
+					if key=="birthday" then
+						val=Date.parse(val).strftime("%Y-%m-%d")
+					end
+					user_key=params['user_key']
+					citoyen=get_citizen(user_key)
+					if citoyen.nil? then
+						status 403 
+						return {"error"=>"unknown_user"}
+					end
+					update_citizen(citoyen,{"key"=>key,"val"=>val})
+					answer[key]=val
+				rescue ArgumentError=>e
+					status 500
+					answer={"error"=>"invalid_date"}
+					API.log.error "update/#{key} invalid birthday #{e.message}"
+				rescue PG::Error=>e
+					status 500
+					API.log.error "update/#{key} PG error #{e.message}"
 				ensure
 					pg_close()
 				end
-				return {
-					"nb_citizens"=>nb_citizens,
-					"nb_candidates"=>nb_candidates,
-					"nb_plebiscites"=>nb_plebiscites,
-				}
+				return answer
 			end
 		end
 	end
