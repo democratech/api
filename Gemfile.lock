@@ -10,6 +10,8 @@ GEM
     algoliasearch (1.8.1)
       httpclient (~> 2.7.1)
       json (>= 1.5.1)
+    authy (2.7.1)
+      httpclient (>= 2.5.3.3)
     aws-sdk (2.3.2)
       aws-sdk-resources (= 2.3.2)
     aws-sdk-core (2.3.2)
@@ -107,6 +109,7 @@ PLATFORMS
 
 DEPENDENCIES
   algoliasearch
+  authy
   aws-sdk
   bson (~> 3.0)
   grape (= 0.12.0)

@@ -22,7 +22,7 @@ module Democratech
 	class API < Grape::API
 		format :json
 		class << self
-			attr_accessor :db, :mg_client, :mandrill, :pg, :aws, :log
+			attr_accessor :db, :mg_client, :mandrill, :pg, :aws, :log, :tw
 		end
 
 		get do
