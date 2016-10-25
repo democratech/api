@@ -86,8 +86,8 @@ END
 				end
 
 				def update_phone(infos)
-					phone_update="UPDATE telephones SET carrier_name=$2, is_cellphone=$3, is_ported=$4 WHERE international=$1 RETURNING *"
-					res=API.pg.exec_params(phone_update,[infos['phone_number'],infos['carrier'],infos['is_cellphone'],infos['is_ported']])
+					phone_update="UPDATE telephones SET carrier_name=$2, is_cellphone=$3 WHERE international=$1 RETURNING *"
+					res=API.pg.exec_params(phone_update,[infos['phone_number'],infos['carrier'],infos['is_cellphone']])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
@@ -191,7 +191,7 @@ END
 					response = Authy::PhoneVerification.start(via: type, country_code: dial_code, phone_number: national)
 					if response.ok? then
 						answer["verif_sent"]="yes"
-						update_phone({'phone_number'=>phone_number,'carrier'=>response.carrier,'is_cellphone'=>response.is_cellphone,'is_ported'=>response.is_ported})
+						update_phone({'phone_number'=>phone_number,'carrier'=>response.carrier,'is_cellphone'=>response.is_cellphone})
 					end
 					API.log.error "phone/lookup phone verification did not start: #{citoyen['email']} / #{phone}" unless response.ok?
 				rescue Twilio::REST::RequestError=>e
@@ -248,15 +248,13 @@ END
 				return {"error"=>"too large request"} if val.length>25
 				return {"error"=>"erroneous request"} if !keys.include?(key)
 				begin
-					if key=="birthday" then
-						val=Date.parse(val).strftime("%Y-%m-%d")
-					end
 					user_key=params['user_key']
 					citoyen=get_citizen(user_key)
 					if citoyen.nil? then
 						status 403 
 						return {"error"=>"unknown_user"}
 					end
+					val=Date.parse(val).strftime("%Y-%m-%d") if key=="birthday"
 					update_citizen(citoyen,{"key"=>key,"val"=>val})
 					answer[key]=val
 				rescue ArgumentError=>e
