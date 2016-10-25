@@ -22,7 +22,7 @@ module Democratech
 	class API < Grape::API
 		format :json
 		class << self
-			attr_accessor :db, :mg_client, :mandrill, :pg, :aws, :log, :tw
+			attr_accessor :db, :mg_client, :mandrill, :pg, :aws, :log, :twilio, :authy
 		end
 
 		get do
@@ -106,7 +106,7 @@ module Democratech
 			end
 		end
 
-		# mount ::Democratech::AuthV1
+		mount ::Democratech::AuthV1
 		mount ::Democratech::VoteV1
 		mount ::Democratech::WufooV2
 		mount ::Democratech::StripeV2

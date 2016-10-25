@@ -20,8 +20,10 @@ puts "connect to database : #{PGNAME} with user : #{PGUSER}"
 Democratech::API.log=Logger.new(::DEBUG ? STDOUT : STDERR)
 Democratech::API.log.level= ::DEBUG ? Logger::DEBUG : Logger::WARN
 Algolia.init :application_id=>ALGOLIA_ID, :api_key=>ALGOLIA_KEY
-Algolia.init :application_id=>ALGOLIA_ID, :api_key=>ALGOLIA_KEY
 Mongo::Logger.logger.level = Logger::WARN
+Democratech::API.twilio = Twilio::REST::LookupsClient.new(TWILIO_ACC_SID,TWILIO_AUTH_TOKEN)
+Authy.api_key = AUTHY_API_KEY
+Authy.api_uri = AUTHY_API_URI
 Democratech::API.mg_client=Mailgun::Client.new(MGUNKEY)
 Democratech::API.mandrill=Mandrill::API.new(MANDRILLKEY)
 Democratech::API.db=Mongo::Client.new(DBURL)
