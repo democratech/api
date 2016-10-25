@@ -52,7 +52,11 @@ GEM
       json_pure (>= 1.8.1)
     json (1.8.3)
     json_pure (1.8.3)
+<<<<<<< HEAD
     jwt (1.5.5)
+=======
+    jwt (1.5.6)
+>>>>>>> master
     kgio (2.10.0)
     mailgun-ruby (1.0.3)
       json (~> 1.8)
@@ -113,6 +117,7 @@ DEPENDENCIES
   aws-sdk
   bson (~> 3.0)
   grape (= 0.12.0)
+  jwt
   mailgun-ruby
   mandrill-api
   mimemagic
@@ -126,4 +131,8 @@ DEPENDENCIES
   unicorn (= 4.7.0)
 
 BUNDLED WITH
+<<<<<<< HEAD
    1.13.1
+=======
+   1.12.5
+>>>>>>> master
