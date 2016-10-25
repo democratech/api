@@ -32,13 +32,42 @@ module Democratech
 			helpers do
 				def get_citizen(user_key)
 					user_key_lookup=<<END
-SELECT c.telegram_id,c.firstname,c.lastname,c.email,c.reset_code,c.registered,c.country,c.user_key,c.validation_level,c.birthday,c.telephone,c.telephone_national,c.telephone_country_code,c.telephone_type,ci.zipcode,ci.name as city,ci.population,ci.departement
-FROM users AS c LEFT JOIN cities AS ci ON (ci.city_id=c.city_id)
+SELECT c.telegram_id,c.firstname,c.lastname,c.email,c.reset_code,c.registered,c.country,c.user_key,c.validation_level,c.birthday,t.*,ci.zipcode,ci.name as city,ci.population,ci.departement
+FROM users AS c 
+LEFT JOIN cities AS ci ON (ci.city_id=c.city_id)
+LEFT JOIN telephones AS t ON (t.international=c.telephone)
 WHERE c.user_key=$1
 END
 					res=API.pg.exec_params(user_key_lookup,[user_key])
-					return res[0]
+					return res.num_tuples.zero? ? nil : res[0]
 				end
+
+				def get_phone(number)
+					phone_lookup="SELECT u.email,u.user_key,t.* FROM telephones as t INNER JOIN users as u ON (u.telephone=t.international) WHERE t.international=$1"
+					res=API.pg.exec_params(phone_lookup,[number])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def update_phone(infos)
+					phone_update="UPDATE telephones SET carrier_name=$2, is_cellphone=$3, is_ported=$4 WHERE international=$1 RETURNING *"
+					res=API.pg.exec_params(phone_update,[infos['phone_number'],infos['carrier'],infos['is_cellphone'],infos['is_ported']])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+
+				def register_phone(infos)
+					phone_register=<<END
+WITH countries AS (SELECT dial_code FROM countries WHERE iso2=$3) INSERT INTO telephones (international,national,country_code,prefix) SELECT $1,$2,$3,countries.dial_code FROM countries RETURNING *
+END
+					res=API.pg.exec_params(phone_register,[infos['phone_number'],infos['national_format'],infos['country_code']])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+				def update_user_with_phone(citoyen,number)
+					update_tel="UPDATE users SET telephone=$1 WHERE user_key=$2 RETURNING *"
+					res=API.pg.exec_params(update_tel,[number,citoyen['user_key']])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
 			end
 
 			get do
@@ -48,31 +77,36 @@ END
 
 			get 'phone/lookup/:user_key' do
 				pg_connect()
-				answer={}
+				answer={"verif_sent"=>"no"}
 				begin
 					user_key=params['user_key']
 					citoyen=get_citizen(user_key)
 					if citoyen.nil? then
 						status 403 
-						return {"error"=>"unknown user"}
+						return {"error"=>"unknown_user"}
 					end
 					tel=params['tel']
 					type=params['type']
-					return {"error"=>"wrong type"} if (type!="sms" and type!="call")
+					return {"error"=>"wrong_type"} if (type!="sms" and type!="call")
 					lookup=API.twilio.phone_numbers.get(tel)
-					phone=lookup.phone_number
+					phone_number=lookup.phone_number
 					national=lookup.national_format
 					country_code=lookup.country_code
-					update_tel="UPDATE users SET telephone=$1,telephone_national=$3,telephone_country_code=$4,telephone_type=$5 WHERE user_key=$2 RETURNING *"
-					res=API.pg.exec_params(update_tel,[phone,user_key,national,country_code,type])
-					API.log.error "phone/lookup no user telephone updated: #{citoyen['email']} / #{phone}\n#{res}" if res.num_tuples.zero?
-					answer={"tel"=>"#{phone}"}
-					get_dial_code="SELECT dial_code FROM countries WHERE iso2=$1"
-					res=API.pg.exec_params(get_dial_code,[country_code])
-					API.log.error "phone/lookup dial_code not found for #{country_code} / #{phone}" if res.num_tuples.zero?
-					dial_code=res[0]['dial_code'];
+					phone=get_phone(phone_number)
+					if phone.nil? then # first time we see this phone
+						phone=register_phone({'phone_number'=>phone_number,'national_format'=>national,'country_code'=>country_code})
+						update_user_with_phone(citoyen,phone_number)
+					elsif phone['user_key']!=user_key then # phone is already used by someone
+						API.log.error "phone/lookup phone is already registered by another user"
+						return {"error"=>"phone_already_used" }
+					end
+					answer={"tel"=>"#{phone_number}"}
+					dial_code=phone['prefix']
 					response = Authy::PhoneVerification.start(via: type, country_code: dial_code, phone_number: national)
-					answer["verif_sent"]= response.ok? ? "yes" : "no"
+					if response.ok? then
+						answer["verif_sent"]="yes"
+						update_phone({'phone_number'=>phone_number,'carrier'=>response.carrier,'is_cellphone'=>response.is_cellphone,'is_ported'=>response.is_ported})
+					end
 					API.log.error "phone/lookup phone verification did not start: #{citoyen['email']} / #{phone}" unless response.ok?
 				rescue Twilio::REST::RequestError=>e
 					status 404
@@ -97,11 +131,7 @@ END
 						return {"error"=>"unknown user"}
 					end
 					code=params['code']
-					get_dial_code="SELECT c.dial_code FROM countries as c INNER JOIN users as u ON (u.telephone_country_code=c.iso2)  WHERE u.user_key=$1"
-					res=API.pg.exec_params(get_dial_code,[user_key])
-					API.log.error "phone/verif dial_code not found for #{citoyen['telephone_country_code']} / #{citoyen['email']}" if res.num_tuples.zero?
-					dial_code=res[0]['dial_code'];
-					response = Authy::PhoneVerification.check(verification_code: code, country_code: dial_code, phone_number: citoyen['telephone_national'])
+					response = Authy::PhoneVerification.check(verification_code: code, country_code: citoyen['prefix'], phone_number: citoyen['international'])
 					if response.ok? then
 						answer["verified"]="yes"
 						update_validation="UPDATE users SET validation_level=(validation_level|2) WHERE user_key=$1 RETURNING *"
