@@ -53,12 +53,10 @@ module Democratech
 				API.log.debug "hash #{hash}\nappId #{appId}\nvoteId #{voteId}"
 				if (hash.nil? or appId!=COCORICO_APP_ID) then
 					API.log.error "Error : invalid token received :\nAppId #{appId}\nhash #{hash}"
-					status 400
 					return {"error"=>"invalid token"} 
 				end
 				if (vote_status!="success" && vote_status!="pending") then
 					API.log.error "Error : unknown vote status received :\nStatus [#{vote_status}]\nVoteId #{voteId}\nAppId #{appId}\nhash #{hash}"
-					status 400
 					return {"msg"=>"vote has not been updated (status:#{vote_status})"}
 				end
 				begin
@@ -71,10 +69,9 @@ WHERE cb.candidate_id=z.candidate_id AND cb.ballot_id=z.ballot_id
 RETURNING *
 END
 					res=API.pg.exec_params(update,[hash,voteId,vote_status])
-					API.log.warning "Webhook received but no ballot updated #{params}" if res.num_tuples.zero?
+					API.log.error "Webhook received but no ballot updated #{params}" if res.num_tuples.zero?
 				rescue PG::Error => e
 					API.log.error "DB Error while updating ballot #{params}\n#{e.message}"
-					status 400
 					return {"error"=>e.message}
 				ensure
 					pg_close()
