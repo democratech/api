@@ -56,8 +56,8 @@ module Democratech
 					status 400
 					return {"error"=>"invalid token"} 
 				end
-				if (vote_status!="success" and vote_status!="pending") then
-					API.log.error "Error : unknown vote status received :\nStatus #{vote_status}\nVoteId #{voteId}\nAppId #{appId}\nhash #{hash}"
+				if (vote_status!="success" && vote_status!="pending") then
+					API.log.error "Error : unknown vote status received :\nStatus [#{vote_status}]\nVoteId #{voteId}\nAppId #{appId}\nhash #{hash}"
 					status 400
 					return {"msg"=>"vote has not been updated (status:#{vote_status})"}
 				end
