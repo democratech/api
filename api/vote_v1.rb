@@ -48,16 +48,18 @@ module Democratech
 
 			post 'casted' do
 				appId,hash=params['event']['user']['sub'].split(':')
-				status=params['event']['status']
+				vote_status=params['event']['status']
 				voteId=params['event']['vote']['id']
 				API.log.debug "hash #{hash}\nappId #{appId}\nvoteId #{voteId}"
 				if (hash.nil? or appId!=COCORICO_APP_ID) then
 					API.log.error "Error : invalid token received :\nAppId #{appId}\nhash #{hash}"
+					status 400
 					return {"error"=>"invalid token"} 
 				end
-				if status!="success" or status!="pending" then
-					API.log.error "Error : unknown vote status received :\nStatus #{status}\nVoteId #{voteId}\nAppId #{appId}\nhash #{hash}"
-					return {"msg"=>"vote has not been updated (status:#{status})"}
+				if vote_status!="success" or vote_status!="pending" then
+					API.log.error "Error : unknown vote status received :\nStatus #{vote_status}\nVoteId #{voteId}\nAppId #{appId}\nhash #{hash}"
+					status 400
+					return {"msg"=>"vote has not been updated (status:#{vote_status})"}
 				end
 				begin
 					pg_connect()
@@ -68,10 +70,11 @@ FROM (SELECT c.candidate_id,b.ballot_id FROM candidates as c INNER JOIN candidat
 WHERE cb.candidate_id=z.candidate_id AND cb.ballot_id=z.ballot_id
 RETURNING *
 END
-					res=API.pg.exec_params(update,[hash,voteId,status])
+					res=API.pg.exec_params(update,[hash,voteId,vote_status])
 					API.log.warning "Webhook received but no ballot updated #{params}" if res.num_tuples.zero?
 				rescue PG::Error => e
 					API.log.error "DB Error while updating ballot #{params}\n#{e.message}"
+					status 400
 					return {"error"=>e.message}
 				ensure
 					pg_close()
