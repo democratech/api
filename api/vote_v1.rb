@@ -50,12 +50,13 @@ module Democratech
 				appId,hash=params['event']['user']['sub'].split(':')
 				vote_status=params['event']['status']
 				voteId=params['event']['vote']['id']
+				statuses=["queued","pending","initializing","initialized","registering","registered","casting","complete"]
 				API.log.debug "hash #{hash}\nappId #{appId}\nvoteId #{voteId}"
 				if (hash.nil? or appId!=COCORICO_APP_ID) then
 					API.log.error "Error : invalid token received :\nAppId #{appId}\nhash #{hash}"
 					return {"error"=>"invalid token"} 
 				end
-				if (vote_status!="success" && vote_status!="pending") then
+				if !statuses.include?(vote_status) then
 					API.log.error "Error : unknown vote status received :\nStatus [#{vote_status}]\nVoteId #{voteId}\nAppId #{appId}\nhash #{hash}"
 					return {"msg"=>"vote has not been updated (status:#{vote_status})"}
 				end
@@ -63,7 +64,7 @@ module Democratech
 					pg_connect()
 					update=<<END
 UPDATE candidates_ballots AS cb
-SET vote_status=$3
+SET vote_status=$3, date_notified=now()
 FROM (SELECT c.candidate_id,b.ballot_id FROM candidates as c INNER JOIN candidates_ballots as cb ON (cb.candidate_id=c.candidate_id AND c.vote_id=$2) INNER JOIN ballots as b ON (b.ballot_id=cb.ballot_id) INNER JOIN users as u ON (u.hash=$1 AND u.email=b.email)) as z
 WHERE cb.candidate_id=z.candidate_id AND cb.ballot_id=z.ballot_id
 RETURNING *
