@@ -105,6 +105,22 @@ END
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
+				def guess_birthdate(val)
+					begin
+						val=Date.parse(val).strftime("%Y-%m-%d")
+						return val
+					rescue ArgumentError=>e
+						return nil if val.length!=8
+						jj=val[0..1]
+						mm=val[2..3]
+						aaaa=val[4..8]
+						return nil if (jj.to_i<1 || jj.to_i>31)
+						return nil if (mm.to_i<1 || mm.to_i>12)
+						return nil if (aaaa.to_i<1916 || aaaa.to_i>2010)
+						return aaaa+'-'+mm+'-'+jj
+					end
+				end
+
 			end
 
 			get do
@@ -254,7 +270,7 @@ END
 						status 403 
 						return {"error"=>"unknown_user"}
 					end
-					val=Date.parse(val).strftime("%Y-%m-%d") if key=="birthday"
+					val=guess_birthdate(val) if key=="birthday"
 					update_citizen(citoyen,{"key"=>key,"val"=>val})
 					answer[key]=val
 				rescue ArgumentError=>e
