@@ -98,7 +98,7 @@ module Democratech
 						end
 					end
 				rescue PG::Error=>e
-					STDERR.puts "Error updating city: #{e}"
+					STDERR.puts "Error updating city: #{suggestion}\n#{e}"
 				ensure
 					pg_close()
 				end

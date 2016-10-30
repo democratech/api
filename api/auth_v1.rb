@@ -260,7 +260,7 @@ END
 				rescue ArgumentError=>e
 					status 500
 					answer={"error"=>"invalid_date"}
-					API.log.error "update/#{key} invalid birthday #{e.message}"
+					API.log.error "update/#{key} invalid birthday #{params} #{e.message}"
 				rescue PG::Error=>e
 					status 500
 					API.log.error "update/#{key} PG error #{e.message}"
