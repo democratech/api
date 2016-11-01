@@ -97,8 +97,10 @@ module Democratech
 							json="{\"city\":\"#{city}\", \"zipcode\":\"#{zipcode}\",\"country\":\"#{country}\"}"
 						end
 					end
+				rescue NoMethodError=>e
+					API.log.error "Algolia Error finding city: #{e}\n#{suggestion}\n#{c}"
 				rescue PG::Error=>e
-					STDERR.puts "Error updating city: #{suggestion}\n#{e}"
+					API.log.error "DB Error updating city: #{e}\n#{suggestion}"
 				ensure
 					pg_close()
 				end

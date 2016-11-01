@@ -212,7 +212,7 @@ END
 					API.log.error "phone/lookup phone verification did not start: #{citoyen['email']} / #{phone}" unless response.ok?
 				rescue Twilio::REST::RequestError=>e
 					status 404
-					API.log.error "phone/lookup Twilio error: #{e.message}"
+					API.log.error "phone/lookup #{tel} Twilio error: #{e.message}"
 				rescue PG::Error=>e
 					status 500
 					API.log.error "phone/lookup PG error #{e.message}"
