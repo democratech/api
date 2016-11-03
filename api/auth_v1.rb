@@ -80,7 +80,7 @@ END
 				end
 
 				def get_phone(number)
-					phone_lookup="SELECT u.email,u.user_key,t.* FROM telephones as t INNER JOIN users as u ON (u.telephone=t.international) WHERE t.international=$1"
+					phone_lookup="SELECT u.email,u.user_key,t.* FROM telephones as t LEFT JOIN users as u ON (u.telephone=t.international) WHERE t.international=$1"
 					res=API.pg.exec_params(phone_lookup,[number])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
@@ -198,8 +198,11 @@ END
 					if phone.nil? then # first time we see this phone
 						phone=register_phone({'phone_number'=>phone_number,'national_format'=>national,'country_code'=>country_code})
 						update_user_with_phone(citoyen,phone_number)
+					elsif phone['user_key'].nil? then # phone is registered but not associated with any account / email
+						API.log.warn "phone/lookup orphan phone #{phone_number} is assigned to user #{citoyen['email']}"
+						update_user_with_phone(citoyen,phone_number)
 					elsif phone['user_key']!=user_key then # phone is already used by someone
-						API.log.error "phone/lookup phone is already registered by another user"
+						API.log.error "phone/lookup phone #{phone_number} is already registered by another user"
 						return {"error"=>"phone_already_used" }
 					end
 					answer={"tel"=>"#{phone_number}"}
@@ -209,7 +212,7 @@ END
 						answer["verif_sent"]="yes"
 						update_phone({'phone_number'=>phone_number,'carrier'=>response.carrier,'is_cellphone'=>response.is_cellphone})
 					end
-					API.log.error "phone/lookup phone verification did not start: #{citoyen['email']} / #{phone}" unless response.ok?
+					API.log.error "phone/lookup phone verification did not start: #{citoyen['email']} / via: #{type}, cc: #{dial_code}, phone: #{national}" unless response.ok?
 				rescue Twilio::REST::RequestError=>e
 					status 404
 					API.log.error "phone/lookup #{tel} Twilio error: #{e.message}"
