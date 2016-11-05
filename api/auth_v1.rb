@@ -243,7 +243,7 @@ END
 						res=API.pg.exec_params(update_validation,[user_key])
 						API.log.error "phone/verif unable to user validation level for #{citoyen['email']} / #{phone}" if res.num_tuples.zero?
 					else
-						API.log.error "phone/verif wrong code #{code} for #{citoyen['email']}"
+						API.log.error "phone/verif wrong code #{code} for #{citoyen['email']} : country_code #{citoyen['prefix']}, phone : #{citoyen['international']}"
 					end
 				rescue Twilio::REST::RequestError=>e
 					status 404
