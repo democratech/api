@@ -130,42 +130,50 @@ END
 INSERT INTO users (email,firstname,lastname,user_key,referal_code,referer) VALUES ($1,$2,$3,md5(random()::text),substring(md5($4) from 1 for 8),$5) returning *;
 END
 						res1=API.pg.exec_params(new_user,[doc[:email],doc[:firstname],doc[:lastname],doc[:email],doc[:referer]])
-						raise "New user was not registered" if res1.num_tuples.zero?
+						raise "New user was not registered (1)" if res1.num_tuples.zero?
 						citoyen=res1[0]
 						from_candidat=""
 						if not (doc[:candidate].nil? or doc[:candidate].empty?) then # user has registered from a candidate page
 							new_follower="INSERT INTO followers (candidate_id,email) VALUES ($1,$2)"
 							res2=API.pg.exec_params(new_follower,[doc[:candidate],doc[:email]])
-							raise "New follower was not registered" if res1.num_tuples.zero?
+							raise "New follower was not registered (2)" if res1.num_tuples.zero?
 							from_candidat="à partir d'une page candidat "
 						end
 						with_referer= (doc[:referer].nil? or doc[:referer].empty?) ? "":"avec referal code "
+						info="Nouvel inscrit à LaPrimaire.org #{from_candidat}#{with_referer}! %s %s" % [doc[:firstname],doc[:lastname]]
+						API.log.info(info)
 						notifs.push([
-							"Nouvel inscrit à LaPrimaire.org #{from_candidat}#{with_referer}! %s %s" % [doc[:firstname],doc[:lastname]],
+							info,
 							"supporteurs",
 							":memo:",
 							"pg"
 						])
 					else
 						citoyen=res[0]
+						info="Lien de vote envoyé à %s %s" % [citoyen['firstname'],citoyen['lastname']]
+						API.log.info(info)
 						notifs.push([
-							"Lien de vote envoyé à %s %s" % [citoyen['firstname'],citoyen['lastname']],
+							info,
 							"supporteurs",
 							":envelope:",
 							"email"
 						])
 					end
 				rescue StandardError => e
+					error="Erreur (PG::Error) en enregistrant un citoyen: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect]
+					API.log.error(error)
 					notifs.push([
-						"Erreur (PG::Error) lors de l'enregistrement d'un citoyen: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect],
+						error,
 						"errors",
 						":scream:",
 						"pg"
 					])
 					errors.push('400 Supporter could not be registered')
 				rescue PG::Error => e
+					error="Erreur (PG::Error) lors de l'enregistrement d'un citoyen: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect]
+					API.log.error(error)
 					notifs.push([
-						"Erreur (PG::Error) lors de l'enregistrement d'un citoyen: %s (%s, %s)\nError message: %s\nError trace: %s" % [doc[:email],doc[:firstname],doc[:lastname],e.message,res.inspect],
+						error,
 						"errors",
 						":scream:",
 						"pg"
@@ -191,7 +199,7 @@ END
 					result=API.mandrill.messages.send_template("laprimaire-org-1er-tour-de-vote",[],message)
 				rescue Mandrill::Error => e
 					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					STDERR.puts msg
+					API.log.error(msg)
 				end
 
 				# 4. We send the notifications and return
