@@ -150,7 +150,7 @@ END
 						])
 					else
 						citoyen=res[0]
-						info="Lien de vote envoyé à %s %s" % [citoyen['firstname'],citoyen['lastname']]
+						info="Lien de vote 2nd tour envoyé à %s %s" % [citoyen['firstname'],citoyen['lastname']]
 						API.log.info(info)
 						notifs.push([
 							info,
@@ -196,7 +196,7 @@ END
 							}]
 						}]
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-1er-tour-de-vote",[],message)
+					result=API.mandrill.messages.send_template("laprimaire-org-pre-2nd-tour-de-vote",[],message)
 				rescue Mandrill::Error => e
 					msg="A mandrill error occurred: #{e.class} - #{e.message}"
 					API.log.error(msg)
