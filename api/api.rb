@@ -106,6 +106,7 @@ module Democratech
 			end
 		end
 
+		mount ::Democratech::PaymentV1
 		mount ::Democratech::AuthV1
 		mount ::Democratech::VoteV1
 		mount ::Democratech::WufooV2
