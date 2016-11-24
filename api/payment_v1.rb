@@ -48,7 +48,7 @@ module Democratech
 					if ::DEBUG then
 						vads.push(PZ_TEST_CERT) 
 					else
-						vads.push(PZ_TEST_CERT) 
+						vads.push(PZ_PROD_CERT)
 					end
 					vads_str=vads.join('+')
 					return Digest::SHA1.hexdigest(vads_str)
@@ -87,10 +87,20 @@ END
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
-				def create_transaction(email)
+				def create_transaction(infos)
 					order_id=DateTime.parse(Time.now().to_s).strftime("%Y%m%d%H%M%S")+rand(999).to_i.to_s
-					new_transaction="INSERT INTO donations (origin,email,order_id) VALUES ('payzen',$1,$2) RETURNING *"
-					res=API.pg.exec_params(new_transaction,[email,order_id])
+					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *"
+					res=API.pg.exec_params(new_transaction,[
+						infos['email'],
+						order_id,
+						infos['firstname'],
+						infos['lastname'],
+						infos['adresse'],
+						infos['zipcode'],
+						infos['city'],
+						infos['state'],
+						infos['country']
+					])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 			end
@@ -106,12 +116,21 @@ END
 
 			post 'transaction' do
 				return JSON.dump({'error'=>'missing email'}) if params['email'].nil?
-				email=params['email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, '')
-				return JSON.dump({'error'=>'wrong email'}) if !email_valid(email)
+				donateur={
+					'email'=>params['email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, ''),
+					'firstname'=>params['vads_cust_first_name'],
+					'lastname'=>params['vads_cust_last_name'],
+					'adresse'=>params['vads_cust_address'],
+					'city'=>params['vads_cust_city'],
+					'zipcode'=>params['vads_cust_zip'],
+					'state'=>params['vads_cust_state'],
+					'country'=>params['country']
+				}
+				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}
 				pg_connect()
 				begin
-					transaction=create_transaction(email)
+					transaction=create_transaction(donateur)
 					raise "cannot create transaction" if transaction.nil?
 					params['vads_trans_id']=transaction['donation_id']
 					params['vads_order_id']=transaction['order_id']
