@@ -105,7 +105,8 @@ END
 			#end
 
 			post 'transaction' do
-				email=params['email'].downcase
+				return JSON.dump({'error'=>'missing email'}) if params['email'].nil?
+				email=params['email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, '')
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(email)
 				answer={}
 				pg_connect()
