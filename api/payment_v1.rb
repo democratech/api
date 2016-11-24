@@ -43,7 +43,7 @@ module Democratech
 
 				def signature(params)
 					tmp=params.select {|k,v| k.match(/vads_/) }	
-					tmp=tmp.sort.to_h
+					tmp=Hash[tmp.sort]
 					vads=tmp.values.flatten
 					if ::DEBUG then
 						vads.push(PZ_TEST_CERT) 
