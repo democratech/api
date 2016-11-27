@@ -110,9 +110,20 @@ END
 				return {"api_version"=>"payment/v1"}
 			end
 			
-			#get 'signature' do
-			#	return signature()
-			#end
+			get 'total' do
+				pg_connect()
+				begin
+					search_transaction="SELECT count(*) FILTER (WHERE amount>=30) as nb_adherents, sum(amount) as total FROM donations WHERE origin='payzen' AND status='AUTHORISED'"
+					res=API.pg.exec(search_transaction)
+					raise "0 member found" if res.num_tuples.zero?
+				rescue PG::Error=>e
+					status 500
+					API.log.error "GET payment/total PG error #{e.message}"
+				ensure
+					pg_close()
+				end
+				return {"total"=>res[0]['total'],"nb_adherents"=>res[0]['nb_adherents']}
+			end
 
 			post 'transaction' do
 				return JSON.dump({'error'=>'missing email'}) if params['email'].nil?
@@ -142,7 +153,7 @@ END
 						'email'=>transaction['email']
 					}
 					#answer["transaction_date"]=Date.parse(transaction['created']).strftime("%Y%M%D%H%m%s")
-				rescue StandardError=>e #TO_CHECK
+				rescue StandardError=>e
 					status 500
 					API.log.error "POST payment/transaction STD error #{e.message}"
 				rescue PG::Error=>e
@@ -155,20 +166,21 @@ END
 			end
 
 			post 'ipn' do
+				notifs=[]
 				sig=signature(params)
 				pg_connect()
 				begin
 					raise "bad signature" if (params['signature']!=sig)
 					transaction=get_transaction(params['vads_trans_id'])
 					raise "transaction not found" if transaction.nil?
-					raise "transaction already processed" if transaction['status']!='CREATED' #CHECK_1
+					raise "transaction already processed" if transaction['status']!='CREATED'
 					maj={
 						'transaction_id'=>params['vads_trans_id'],
 						'status'=>params['vads_trans_status'],
-						'amount_raw'=>params['vads_amount'],
+						'amount_raw'=>(params['vads_amount'].to_i)/100,
 						'currency'=>params['vads_currency'],
 						'change_rate'=>params['vads_change_rate'],
-						'amount'=>params['vads_effective_amount'],
+						'amount'=>(params['vads_effective_amount'].to_i)/100,
 						'auth_result'=>params['vads_auth_result'],
 						'threeds'=>params['vads_threeds_enrolled'],
 						'threeds_status'=>params['vads_threeds_status'],
@@ -183,7 +195,14 @@ END
 						'email'=>params['email']
 					}
 					update_transaction(maj)
-				rescue StandardError=>e #TO_CHECK
+					texte=maj['amount']>=30 ? "Nouvelle adhésion enregistrée" : "Nouveau don enregistré"
+					notifs.push([
+						"%s ! %s %s (%s, %s) : %s€" % [texte,transaction['firstname'],transaction['lastname'],transaction['zipcode'],transaction['city'],maj['amount'].to_s],
+						"crowdfunding",
+						":moneybag:",
+						"Payzen"
+					])
+				rescue StandardError=>e
 					status 403
 					API.log.error "POST payment/ipn STD error #{e.message}"
 				rescue PG::Error=>e
@@ -192,6 +211,7 @@ END
 				ensure
 					pg_close()
 				end
+				slack_notifications(notifs)
 			end
 		end
 	end
