@@ -54,6 +54,12 @@ module Democratech
 					return Digest::SHA1.hexdigest(vads_str)
 				end
 
+				def search_opened_transaction(email)
+					search_transaction="SELECT * FROM donations WHERE email=$1 AND status='CREATED' LIMIT 1"
+					res=API.pg.exec_params(search_transaction,[email])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
 				def get_transaction(transaction_id)
 					search_transaction="SELECT * FROM donations WHERE donation_id=$1"
 					res=API.pg.exec_params(search_transaction,[transaction_id])
@@ -128,20 +134,21 @@ END
 			post 'transaction' do
 				return JSON.dump({'error'=>'missing email'}) if params['email'].nil?
 				donateur={
-					'email'=>params['email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, ''),
+					'email'=>params['vads_cust_email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, ''),
 					'firstname'=>params['vads_cust_first_name'],
 					'lastname'=>params['vads_cust_last_name'],
 					'adresse'=>params['vads_cust_address'],
 					'city'=>params['vads_cust_city'],
 					'zipcode'=>params['vads_cust_zip'],
 					'state'=>params['vads_cust_state'],
-					'country'=>params['country']
+					'country'=>params['vads_cust_country']
 				}
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}
 				pg_connect()
 				begin
-					transaction=create_transaction(donateur)
+					transaction=search_opened_transaction(donateur['email'])
+					transaction=create_transaction(donateur) if transaction.num_tuples.zero?
 					raise "cannot create transaction" if transaction.nil?
 					params['vads_trans_id']=transaction['donation_id']
 					params['vads_order_id']=transaction['order_id']
