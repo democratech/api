@@ -55,7 +55,7 @@ module Democratech
 				end
 
 				def search_opened_transaction(email)
-					search_transaction="SELECT * FROM donations WHERE email=$1 AND status='CREATED' LIMIT 1"
+					search_transaction="SELECT * FROM donations WHERE email=$1 AND status='CREATED' AND created>'2016-11-28' LIMIT 1"
 					res=API.pg.exec_params(search_transaction,[email])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
@@ -135,13 +135,13 @@ END
 				return JSON.dump({'error'=>'missing email'}) if params['vads_cust_email'].nil?
 				donateur={
 					'email'=>params['vads_cust_email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, ''),
-					'firstname'=>params['vads_cust_first_name'],
-					'lastname'=>params['vads_cust_last_name'],
-					'adresse'=>params['vads_cust_address'],
-					'city'=>params['vads_cust_city'],
-					'zipcode'=>params['vads_cust_zip'],
-					'state'=>params['vads_cust_state'],
-					'country'=>params['vads_cust_country']
+					'firstname'=>params['vads_cust_first_name'].gsub(/"/,''),
+					'lastname'=>params['vads_cust_last_name'].gsub(/"/,''),
+					'adresse'=>params['vads_cust_address'].gsub(/"/,''),
+					'city'=>params['vads_cust_city'].gsub(/"/,''),
+					'zipcode'=>params['vads_cust_zip'].gsub(/"/,''),
+					'state'=>params['vads_cust_state'].gsub(/"/,''),
+					'country'=>params['vads_cust_country'].gsub(/"/,'')
 				}
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}
@@ -152,7 +152,6 @@ END
 					raise "cannot create transaction" if transaction.nil?
 					params['vads_trans_id']=transaction['donation_id']
 					params['vads_order_id']=transaction['order_id']
-					params['vads_cust_email']=transaction['email']
 					answer={
 						'signature'=>signature(params),
 						'transaction_id'=>transaction['donation_id'],
