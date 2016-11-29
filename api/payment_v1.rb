@@ -155,10 +155,10 @@ END
 					#answer["transaction_date"]=Date.parse(transaction['created']).strftime("%Y%M%D%H%m%s")
 				rescue StandardError=>e
 					status 500
-					API.log.error "POST payment/transaction STD error #{e.message}"
+					API.log.error "POST payment/transaction STD error #{e.message} #{answer}"
 				rescue PG::Error=>e
 					status 500
-					API.log.error "POST payment/transaction PG error #{e.message}"
+					API.log.error "POST payment/transaction PG error #{e.message} #{answer}"
 				ensure
 					pg_close()
 				end
@@ -192,7 +192,7 @@ END
 						'card_bank_product'=>params['vads_bank_product'],
 						'card_country'=>params['vads_card_country'],
 						'order_id'=>params['vads_order_id'],
-						'email'=>params['email']
+						'email'=>params['vads_cust_email']
 					}
 					update_transaction(maj)
 					texte=maj['amount']>=30 ? "Nouvelle adhésion enregistrée" : "Nouveau don enregistré"
