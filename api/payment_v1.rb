@@ -148,7 +148,7 @@ END
 				pg_connect()
 				begin
 					transaction=search_opened_transaction(donateur['email'])
-					transaction=create_transaction(donateur) if transaction.num_tuples.zero?
+					transaction=create_transaction(donateur) if transaction.nil?
 					raise "cannot create transaction" if transaction.nil?
 					params['vads_trans_id']=transaction['donation_id']
 					params['vads_order_id']=transaction['order_id']
