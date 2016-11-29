@@ -132,7 +132,7 @@ END
 			end
 
 			post 'transaction' do
-				return JSON.dump({'error'=>'missing email'}) if params['email'].nil?
+				return JSON.dump({'error'=>'missing email'}) if params['vads_cust_email'].nil?
 				donateur={
 					'email'=>params['vads_cust_email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, ''),
 					'firstname'=>params['vads_cust_first_name'],
