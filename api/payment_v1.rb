@@ -179,7 +179,7 @@ END
 					raise "bad signature" if (params['signature']!=sig)
 					transaction=get_transaction(params['vads_trans_id'])
 					raise "transaction not found" if transaction.nil?
-					raise "transaction already processed" if transaction['status']!='CREATED'
+					# raise "transaction already processed" if transaction['status']=='AUTHORISED' # I dont see why we should do that
 					maj={
 						'transaction_id'=>params['vads_trans_id'],
 						'status'=>params['vads_trans_status'],
