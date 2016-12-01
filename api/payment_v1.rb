@@ -143,7 +143,7 @@ END
 					'zipcode'=>params['vads_cust_zip'].gsub(/"/,''),
 					'state'=>params['vads_cust_state'].gsub(/"/,''),
 					'country'=>params['vads_cust_country'].gsub(/"/,''),
-					'adhesion'=>params['adhesion']
+					'adhesion'=>params['adhesion'].to_i
 				}
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}
