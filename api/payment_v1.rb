@@ -95,7 +95,7 @@ END
 
 				def create_transaction(infos)
 					order_id=DateTime.parse(Time.now().to_s).strftime("%Y%m%d%H%M%S")+rand(999).to_i.to_s
-					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *"
+					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country,adhesion) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *"
 					res=API.pg.exec_params(new_transaction,[
 						infos['email'],
 						order_id,
@@ -105,7 +105,8 @@ END
 						infos['zipcode'],
 						infos['city'],
 						infos['state'],
-						infos['country']
+						infos['country'],
+						infos['adhesion']
 					])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
@@ -141,7 +142,8 @@ END
 					'city'=>params['vads_cust_city'].gsub(/"/,''),
 					'zipcode'=>params['vads_cust_zip'].gsub(/"/,''),
 					'state'=>params['vads_cust_state'].gsub(/"/,''),
-					'country'=>params['vads_cust_country'].gsub(/"/,'')
+					'country'=>params['vads_cust_country'].gsub(/"/,''),
+					'adhesion'=>params['adhesion']
 				}
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}
@@ -203,7 +205,7 @@ END
 					update_transaction(maj)
 					texte=maj['amount']>=30 ? "Nouvelle adhésion enregistrée" : "Nouveau don enregistré"
 					notifs.push([
-						"%s ! %s %s (%s, %s) : %s€" % [texte,transaction['firstname'],transaction['lastname'],transaction['zipcode'],transaction['city'],maj['amount'].to_s],
+						"%s ! %s %s (%s, %s) : %s€ [%s]" % [texte,transaction['firstname'],transaction['lastname'],transaction['zipcode'],transaction['city'],maj['amount'].to_s,maj['status']],
 						"crowdfunding",
 						":moneybag:",
 						"Payzen"
