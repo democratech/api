@@ -33,6 +33,10 @@ module Democratech
 				def authorized
 					params['HandshakeKey']==WUFHS
 				end
+
+				def webhook_authorized(key)
+					key==MC_WEBHOOK_SECRET_KEY
+				end
 			end
 
 			get do
@@ -77,7 +81,8 @@ module Democratech
 				slack_notifications(notifs) if not notifs.empty?
 			end
 
-			post 'mandrill' do
+			post 'mandrill/:key' do
+				error!('401 Unauthorized', 401) unless webhook_authorized(params['key'])
 				events=JSON.parse(params['mandrill_events'])
 				events.each do |e|
 					email=e['msg']['email']
@@ -94,16 +99,12 @@ module Democratech
 						pg_connect()
 						case e['event'] # soft_bounce, open, click, reject are not handled
 						when 'send' then
-							#puts "send #{e['msg']['email']}"
 							res=API.pg.exec_params(query1,[status['sent'],1,e['msg']['email']])
 						when 'hard_bounce' then
-							#puts "hard bounce #{e['msg']['email']}"
 							res=API.pg.exec_params(query2,[status['bounce'],2,e['msg']['email']])
 						when 'spam' then
-							#puts "spam #{e['msg']['email']}"
 							res=API.pg.exec_params(query2,[status['spam'],2,e['msg']['email']])
 						when 'unsub' then
-							#puts "unsub #{e['msg']['email']}"
 							res=API.pg.exec_params(query2,[status['unsub'],2,e['msg']['email']])
 						end
 					rescue PG::Error=>e
@@ -111,6 +112,51 @@ module Democratech
 					ensure
 						pg_close()
 					end
+				end
+			end
+
+			get 'mailchimp/:key' do
+				# do not delete / necessary for mailchimp webhook
+			end
+
+			post 'mailchimp/:key' do
+				error!('401 Unauthorized', 401) unless webhook_authorized(params['key'])
+				type=params['type']
+				puts type
+				reason=params['data']['reason']
+				puts reason
+				email=params['data']['email']
+				puts email
+				return error!('400 Bad request', 400) if email.nil? || email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
+				if type=='unsubscribe' then
+					error!('400 Bad request', 400) unless ['manual','abuse'].include?(reason)
+				elsif type=='cleaned' then
+					error!('400 Bad request', 400) unless ['hard','abuse'].include?(reason)
+				else
+					error!('403 Forbidden', 403)
+				end
+				status={
+					'sent'=>2,
+					'spam'=>1,
+					'unsub'=>-1,
+					'bounce'=>-2,
+				}
+				query1="update users set email_status=$1, validation_level=(validation_level | $2) where email=$3"
+				query2="update users set email_status=$1 where email=$2"
+				begin
+					pg_connect()
+					case reason # soft_bounce, open, click, reject are not handled
+					when 'manual' then
+						res=API.pg.exec_params(query2,[status['unsub'],email])
+					when 'hard' then
+						res=API.pg.exec_params(query1,[status['bounce'],2,email])
+					when 'abuse' then
+						res=API.pg.exec_params(query2,[status['spam'],email])
+					end
+				rescue PG::Error=>e
+					return {"error"=>e.message}
+				ensure
+					pg_close()
 				end
 			end
 		end
