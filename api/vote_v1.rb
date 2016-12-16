@@ -63,7 +63,7 @@ module Democratech
 				begin
 					pg_connect()
 					update=<<END
-UPDATE ballots AS b SET vote_status='success', date_notified=now()
+UPDATE ballots AS b SET vote_status=$3, date_notified=now()
 FROM (SELECT v.vote_id,u.email FROM users as u INNER JOIN ballots as b ON (b.email=u.email AND u.hash=$1) INNER JOIN votes as v ON (v.vote_id=b.vote_id AND v.cc_vote_id=$2)) as z
 WHERE b.vote_id=z.vote_id AND b.email=z.email
 RETURNING *

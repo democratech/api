@@ -122,11 +122,8 @@ module Democratech
 			post 'mailchimp/:key' do
 				error!('401 Unauthorized', 401) unless webhook_authorized(params['key'])
 				type=params['type']
-				puts type
 				reason=params['data']['reason']
-				puts reason
 				email=params['data']['email']
-				puts email
 				return error!('400 Bad request', 400) if email.nil? || email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
 				if type=='unsubscribe' then
 					error!('400 Bad request', 400) unless ['manual','abuse'].include?(reason)

@@ -20,6 +20,7 @@
 
 require 'digest'
 require 'date'
+require 'net/http'
 
 module Democratech
 	class AuthV1 < Grape::API
@@ -121,6 +122,14 @@ END
 					end
 				end
 
+				def get_geodata(ip)
+					uri = URI.parse('https://geoip.maxmind.com')
+					http = Net::HTTP.new(uri.host, uri.port)
+					http.use_ssl = true
+					request = Net::HTTP::Get.new("/geoip/v2.1/city/#{ip}")
+					request.basic_auth(MAXMIND_USER,MAXMIND_PWD)
+					return http.request(request)
+				end
 			end
 
 			get do
@@ -283,6 +292,57 @@ END
 				rescue PG::Error=>e
 					status 500
 					API.log.error "update/#{key} PG error #{e.message}"
+				ensure
+					pg_close()
+				end
+				return answer
+			end
+
+			get 'geodata/lookup' do
+				ip=request.ip
+				ip='46.101.163.182' if ::DEBUG
+				geodata=JSON.parse(get_geodata(ip).body)
+				state=geodata['subdivisions'][0].nil? ? nil : geodata['subdivisions'][0]['iso_code']
+				data=[
+					ip,
+					geodata['city']['names']['fr'],
+					geodata['location']['latitude'],
+					geodata['location']['longitude'],
+					geodata['location']['accuracy_radius'],
+					geodata['continent']['code'],
+					geodata['country']['iso_code'],
+					state,
+					geodata['postal']['code'],
+					geodata['location']['time_zone'],
+					JSON.dump(geodata),
+					geodata['traits']['isp'],
+					geodata['traits']['organization']
+				]
+				answer={"lookup"=>"OK"}
+				pg_connect()
+				begin
+					query="SELECT * FROM ip_addresses WHERE ip_address=$1"
+					res=API.pg.exec_params(query,[ip])
+					if res.num_tuples.zero? then
+						query="INSERT INTO ip_addresses (ip_address, city_name, lat_deg, lon_deg, accuracy_radius, continent_code, country_code, state_code, zip_code, time_zone, geodata, isp, organization) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *"
+						res=API.pg.exec_params(query,data)
+						raise "could not insert ip_address" if res.num_tuples.zero?
+					else
+						query="UPDATE ip_addresses SET ip_address=CAST($1 AS VARCHAR), city_name=$2, lat_deg=$3, lon_deg=$4, accuracy_radius=$5, continent_code=$6, country_code=$7, state_code=$8, zip_code=$9, time_zone=$10, geodata=$11, isp=$12, organization=$13, updated_at=now() WHERE ip_address=$1 AND now()>(updated_at+interval '15 days') RETURNING *"
+						res=API.pg.exec_params(query,data)
+					end
+				rescue StandardError=>e
+					status 500
+					answer={"lookup"=>"KO"}
+					API.log.error "geodata/lookup Standard Error #{params} #{e.message}"
+				rescue ArgumentError=>e
+					status 500
+					answer={"lookup"=>"KO"}
+					API.log.error "geodata/lookup Argument Error #{params} #{e.message}"
+				rescue PG::Error=>e
+					status 500
+					answer={"lookup"=>"KO"}
+					API.log.error "geodata/lookup PG error #{e.message}"
 				ensure
 					pg_close()
 				end
