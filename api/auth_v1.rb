@@ -302,17 +302,22 @@ END
 				ip=request.ip
 				ip='46.101.163.182' if ::DEBUG
 				geodata=JSON.parse(get_geodata(ip).body)
-				state=geodata['subdivisions'][0].nil? ? nil : geodata['subdivisions'][0]['iso_code']
+				state=nil
+				state=(geodata['subdivisions'][0].nil? ? nil : geodata['subdivisions'][0]['iso_code']) unless geodata['subdivisions'].nil?
+				city=nil
+				city=(geodata['city']['names'].nil? ? nil : geodata['city']['names']['fr']) unless geodata['city'].nil?
+				zipcode=nil
+				zipcode=geodata['postal']['code'] unless geodata['postal'].nil?
 				data=[
 					ip,
-					geodata['city']['names']['fr'],
+					city,
 					geodata['location']['latitude'],
 					geodata['location']['longitude'],
 					geodata['location']['accuracy_radius'],
 					geodata['continent']['code'],
 					geodata['country']['iso_code'],
 					state,
-					geodata['postal']['code'],
+					zipcode,
 					geodata['location']['time_zone'],
 					JSON.dump(geodata),
 					geodata['traits']['isp'],
