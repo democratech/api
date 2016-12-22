@@ -67,6 +67,7 @@ module Democratech
 				end
 
 				def update_transaction(transaction)
+					transaction['status']='AUTHORISED' if transaction['status']=='CAPTURED'
 					params=[transaction['status'],
 						transaction['amount_raw'],
 						transaction['currency'],
@@ -120,7 +121,7 @@ END
 			get 'total' do
 				pg_connect()
 				begin
-					search_transaction="SELECT count(*) as nb_adherents, sum(amount) as total FROM donations WHERE origin='payzen' AND status='AUTHORISED'"
+					search_transaction="SELECT count(*) as nb_adherents, sum(amount) as total FROM donations WHERE recipient='PARTI' and (origin='chèque' OR (origin='payzen' AND status='AUTHORISED'))"
 					res=API.pg.exec(search_transaction)
 					raise "0 member found" if res.num_tuples.zero?
 				rescue PG::Error=>e
