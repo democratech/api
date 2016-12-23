@@ -96,7 +96,7 @@ END
 
 				def create_transaction(infos)
 					order_id=DateTime.parse(Time.now().to_s).strftime("%Y%m%d%H%M%S")+rand(999).to_i.to_s
-					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country,adhesion) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *"
+					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country,adhesion,recipient) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *"
 					res=API.pg.exec_params(new_transaction,[
 						infos['email'],
 						order_id,
@@ -107,7 +107,8 @@ END
 						infos['city'],
 						infos['state'],
 						infos['country'],
-						infos['adhesion']
+						infos['adhesion'],
+						'PARTI'
 					])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
