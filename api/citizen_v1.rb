@@ -196,7 +196,7 @@ END
 							}]
 						}]
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-2eme-tour-de-vote",[],message)
+					result=API.mandrill.messages.send_template("laprimaire-org-2nd-tour-de-vote-mini",[],message)
 				rescue Mandrill::Error => e
 					msg="A mandrill error occurred: #{e.class} - #{e.message}"
 					API.log.error(msg)
