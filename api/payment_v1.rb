@@ -61,7 +61,7 @@ module Democratech
 				end
 
 				def get_transaction(transaction_id)
-					search_transaction="SELECT * FROM donations WHERE donation_id=$1"
+					search_transaction="SELECT d.*,c.name,c.slug FROM donations as d LEFT JOIN candidates as c ON (c.candidate_id=d.candidate_id) WHERE donation_id=$1"
 					res=API.pg.exec_params(search_transaction,[transaction_id])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
@@ -119,7 +119,23 @@ END
 				# DO NOT DELETE used to test the api is live
 				return {"api_version"=>"payment/v1"}
 			end
-			
+
+			get 'candidate/:candidate_id' do
+				candidate_id=params['candidate_id'].to_i
+				pg_connect()
+				begin
+					search_transaction="SELECT count(*) as nb_adherents, sum(amount) as total FROM donations WHERE candidate_id=$1 AND recipient='PARTI' and (origin='chèque' OR (origin='payzen' AND status='AUTHORISED'))"
+					res=API.pg.exec_params(search_transaction,[candidate_id])
+					raise "0 member found" if res.num_tuples.zero?
+				rescue PG::Error=>e
+					status 500
+					API.log.error "GET payment/total PG error #{e.message}"
+				ensure
+					pg_close()
+				end
+				return {"total"=>res[0]['total'],"nb_adherents"=>res[0]['nb_adherents']}
+			end
+
 			get 'total' do
 				pg_connect()
 				begin
@@ -137,6 +153,7 @@ END
 
 			post 'transaction' do
 				return JSON.dump({'error'=>'missing email'}) if params['vads_cust_email'].nil?
+				candidate_id= params['candidate_id']=='' ? nil : params['candidate_id'].to_i
 				donateur={
 					'email'=>params['vads_cust_email'].downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, ''),
 					'firstname'=>params['vads_cust_first_name'].gsub(/"/,''),
@@ -147,7 +164,7 @@ END
 					'state'=>params['vads_cust_state'].gsub(/"/,''),
 					'country'=>params['vads_cust_country'].gsub(/"/,''),
 					'adhesion'=>params['adhesion'].to_i,
-					'candidate_id'=>params['candidate_id'].to_i
+					'candidate_id'=>candidate_id
 				}
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}
@@ -208,8 +225,9 @@ END
 					}
 					update_transaction(maj)
 					texte=maj['amount']>=30 ? "Nouvelle adhésion enregistrée" : "Nouveau don enregistré"
+					recipient=transaction['candidate_id'].nil? ? "LaPrimaire.org" : transaction['name']
 					notifs.push([
-						"%s ! %s %s (%s, %s) : %s€ [%s]" % [texte,transaction['firstname'],transaction['lastname'],transaction['zipcode'],transaction['city'],maj['amount'].to_s,maj['status']],
+						"%s ! %s %s (%s, %s) : %s€ [TO:%s][%s]" % [texte,transaction['firstname'],transaction['lastname'],transaction['zipcode'],transaction['city'],maj['amount'].to_s,recipient,maj['status']],
 						"crowdfunding",
 						":moneybag:",
 						"Payzen"
