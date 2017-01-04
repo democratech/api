@@ -96,7 +96,7 @@ END
 
 				def create_transaction(infos)
 					order_id=DateTime.parse(Time.now().to_s).strftime("%Y%m%d%H%M%S")+rand(999).to_i.to_s
-					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country,adhesion,recipient) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *"
+					new_transaction="INSERT INTO donations (origin,email,order_id,firstname,lastname,adresse,zipcode,city,state,country,adhesion,recipient,candidate_id) VALUES ('payzen',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *"
 					res=API.pg.exec_params(new_transaction,[
 						infos['email'],
 						order_id,
@@ -108,7 +108,8 @@ END
 						infos['state'],
 						infos['country'],
 						infos['adhesion'],
-						'PARTI'
+						'PARTI',
+						infos['candidate_id']
 					])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
@@ -145,7 +146,8 @@ END
 					'zipcode'=>params['vads_cust_zip'].gsub(/"/,''),
 					'state'=>params['vads_cust_state'].gsub(/"/,''),
 					'country'=>params['vads_cust_country'].gsub(/"/,''),
-					'adhesion'=>params['adhesion'].to_i
+					'adhesion'=>params['adhesion'].to_i,
+					'candidate_id'=>params['candidate_id'].to_i
 				}
 				return JSON.dump({'error'=>'wrong email'}) if !email_valid(donateur['email'])
 				answer={}

@@ -323,7 +323,7 @@ END
 					geodata['traits']['isp'],
 					geodata['traits']['organization']
 				]
-				answer={"lookup"=>"OK"}
+				answer={"lookup"=>"OK","country"=>geodata['country']['iso_code']}
 				pg_connect()
 				begin
 					query="SELECT * FROM ip_addresses WHERE ip_address=$1"
