@@ -94,6 +94,7 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.1)
+    unicode_utils (1.4.0)
     unicorn (4.7.0)
       kgio (~> 2.6)
       rack
@@ -124,6 +125,7 @@ DEPENDENCIES
   rack-cors
   stripe
   twilio-ruby
+  unicode_utils
   unicorn (= 4.7.0)
 
 BUNDLED WITH
