@@ -197,7 +197,7 @@ END
 					}]
 				}
 				begin
-					result=API.mandrill.messages.send_template("laprimaire-org-candidates-bienvenue",[],message)
+					result=API.mandrill.messages.send_template("legislatives-candidats-bienvenue",[],message)
 				rescue Mandrill::Error => e
 					msg="A mandrill error occurred: #{e.class} - #{e.message}"
 					STDERR.puts msg
