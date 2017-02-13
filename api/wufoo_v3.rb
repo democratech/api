@@ -115,7 +115,7 @@ module Democratech
 						:city => fix_wufoo(strip_tags(UnicodeUtils.upcase(params["Field268"]))),
 						:birthday => params["Field272"],
 						:birthplace => fix_wufoo(strip_tags(UnicodeUtils.upcase(params["Field273"]))),
-						:circonscription=>fix_wufoo(strip_tags(params["Field254"])),
+						:region=>fix_wufoo(strip_tags(params["Field279"])),
 						:suppleant_name=>params["Field258"]=="Oui" ? fix_wufoo(strip_tags(params["Field259"])) : "Aucun",
 						:suppleant_email=>params["Field258"]=="Oui" ? fix_wufoo(strip_tags(params["Field260"])) : "Aucun",
 						:candidat=>fix_wufoo(strip_tags(params["Field261"])),
@@ -130,9 +130,40 @@ module Democratech
 						:website => fix_wufoo(strip_tags(params["Field13"])),
 						:twitter => fix_wufoo(strip_tags(params["Field15"])),
 						:facebook => fix_wufoo(strip_tags(params["Field14"])),
-						:photo_key => profile_pic,
+						:photo_key => '/laprimaire/candidats_legislatives/'+profile_pic,
 						:election_id=>params["Field277"].to_i
 					}
+					if not params["Field280"].nil? and not params["Field280"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field280"]))
+					elsif not params["Field282"].nil? and not params["Field282"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field282"]))
+					elsif not params["Field283"].nil? and not params["Field283"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field283"]))
+					elsif not params["Field284"].nil? and not params["Field284"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field284"]))
+					elsif not params["Field286"].nil? and not params["Field286"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field286"]))
+					elsif not params["Field287"].nil? and not params["Field287"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field287"]))
+					elsif not params["Field288"].nil? and not params["Field288"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field288"]))
+					elsif not params["Field289"].nil? and not params["Field289"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field289"]))
+					elsif not params["Field290"].nil? and not params["Field290"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field290"]))
+					elsif not params["Field291"].nil? and not params["Field291"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field291"]))
+					elsif not params["Field293"].nil? and not params["Field293"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field293"]))
+					elsif not params["Field294"].nil? and not params["Field294"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field294"]))
+					elsif not params["Field295"].nil? and not params["Field295"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field295"]))
+					elsif not params["Field396"].nil? and not params["Field396"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field396"]))
+					elsif not params["Field397"].nil? and not params["Field397"].empty? then
+						maj[:circonscription]=fix_wufoo(strip_tags(params["Field397"]))
+					end
 					insert_candidate=<<END
 INSERT INTO candidates (candidate_id,name,gender,country,zipcode,address1,address2,city,birthday,birthplace,email,job,tel,program_theme,political_party,already_candidate,already_elected,website,twitter,facebook,photo,candidate_key) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,md5(random()::text)) RETURNING *
 END
@@ -162,11 +193,16 @@ END
 					raise "candidate could not be created" if res.num_tuples.zero?
 					candidate_key=res[0]['candidate_key']
 					candidate_id=res[0]['candidate_id']
+					find_circo="SELECT * FROM circonscriptions as c WHERE c.name_circonscription=$1"
+					res=API.pg.exec_params(find_circo,[maj[:circonscription]])
+					raise "circonscription could not be found" if res.num_tuples.zero?
+					circonscription_id=res[0]['id'].to_i
 					insert_candidate_election=<<END
 INSERT INTO candidates_elections (candidate_id,election_id,fields) values ($1,$2,$3) RETURNING *
 END
 					jsonfields={
 						'circonscription'=>maj[:circonscription],
+						'circonscription_id'=>circonscription_id,
 						'suppleant_name'=>maj[:suppleant_name],
 						'suppleant_email'=>maj[:suppleant_email],
 						'candidate'=>maj[:candidat],

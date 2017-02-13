@@ -127,7 +127,7 @@ END
 					res=API.pg.exec_params(get_user_by_email,[doc[:email]])
 					if res.num_tuples.zero? then # user does not yet exists
 						new_user=<<END
-INSERT INTO users (email,firstname,lastname,user_key,referal_code,referer) VALUES ($1,$2,$3,md5(random()::text),substring(md5($4) from 1 for 8),$5) returning *;
+INSERT INTO users (email,firstname,lastname,user_key,referal_code,referer,organization_id) VALUES ($1,$2,$3,md5(random()::text),substring(md5($4) from 1 for 8),$5,1) returning *;
 END
 						res1=API.pg.exec_params(new_user,[doc[:email],doc[:firstname],doc[:lastname],doc[:email],doc[:referer]])
 						raise "New user was not registered (1)" if res1.num_tuples.zero?
