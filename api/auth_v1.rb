@@ -24,7 +24,7 @@ require 'net/http'
 
 module Democratech
 	class AuthV1 < Grape::API
-		version ['v1','v2']
+		version ['v1']
 		format :json
 
 		get do

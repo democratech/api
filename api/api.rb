@@ -108,6 +108,7 @@ module Democratech
 
 		mount ::Democratech::WufooV3
 		mount ::Democratech::PaymentV1
+		mount ::Democratech::AuthV2
 		mount ::Democratech::AuthV1
 		mount ::Democratech::VoteV1
 		mount ::Democratech::WufooV2

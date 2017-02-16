@@ -3,7 +3,7 @@ require File.expand_path('../config/environment', __FILE__)
 use Rack::Cors do
 	allow do
 		origins '*'
-		resource '*', headers: :any, methods: [:get,:delete]
+		resource '*', headers: :any, methods: [:get,:delete,:post,:put]
 	end
 end
 
