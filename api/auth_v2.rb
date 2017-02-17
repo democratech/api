@@ -35,13 +35,9 @@ module Democratech
 		resource :auth do
 			helpers do
 				def validate_email(email)
-					puts email
 					return nil if email.nil?
-					puts email+'A'
 					email=email.downcase.gsub(/\A\p{Space}*|\p{Space}*\z/, '')
-					puts email+'B'
 					return nil if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
-					puts email+'C'
 					domain_lookup="SELECT domain FROM forbidden_domains WHERE domain=$1"
 					res=API.pg.exec_params(domain_lookup,[email.split('@')[1]])
 					return res.num_tuples.zero? ? email : nil
@@ -56,6 +52,24 @@ LEFT JOIN telephones AS t ON (t.international=c.telephone)
 WHERE c.email=$1
 END
 					res=API.pg.exec_params(user_email_lookup,[email])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def update_country(country,user_key)
+					country_save="UPDATE users as u SET country=$1 FROM countries as c WHERE u.user_key=$2 AND c.name=$1 RETURNING c.name,c.dial_code"
+					res=API.pg.exec_params(country_save,[country,user_key])
+					return res.num_tuples.zero? ? nil : res[0]
+				end
+
+				def update_city(city,user_key,france=true,num_circonscription=nil,num_commune=nil,code_departement=nil)
+					if france then
+						city_save="UPDATE users as u SET city=$1, city_id=c.city_id FROM circos as c WHERE u.user_key=$2 AND c.num_circonscription=$3 AND c.num_commune=$4 AND c.departement=$5 RETURNING city"
+						params=[city,user_key,num_circonscription,num_commune,code_departement]
+					else
+						city_save="UPDATE users as u SET city=$1 WHERE u.user_key=$2 RETURNING city, null as circonscription_id" 
+						params=[city,user_key]
+					end
+					res=API.pg.exec_params(city_save,params)
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 			end
@@ -95,10 +109,11 @@ END
 						hostname='legislatives.laprimaire.org' if ::DEBUG
 						res1=API.pg.exec_params(new_user,[email,referer,hostname])
 						raise "user not registered" if res1.num_tuples.zero?
+						citizen=res1[0]
 						answer['new_user']=true
+						answer['redirect_url']='/citoyen/verif/'+CGI.escape(email)
 						email_notification['template']='laprimaire-org-signup';
 						email_notification['subject']='Bienvenue sur LaPrimaire.org !';
-						citizen=res1[0]
 						info="Nouvel inscrit à LaPrimaire.org"
 						API.log.info(info)
 						notifs.push([
@@ -107,8 +122,9 @@ END
 							":memo:",
 							"pg"
 						])
+					else
+						answer['redirect_url']="/citoyen/auth/#{citizen['user_key']}"
 					end
-					answer['user_key']=citizen['user_key']
 					message= {
 						:to=>[{ :email=> email }],
 						:subject=> email_notification['subject'],
@@ -125,10 +141,10 @@ END
 				rescue StandardError=>e
 					status 403
 					answer={"error"=>e.message}
-					API.log.error "email/verif error #{e.message}"
+					API.log.error "auth/login error #{e.message}"
 				rescue PG::Error=>e
 					status 500
-					API.log.error "email/verif PG error #{e.message}"
+					API.log.error "auth/login PG error #{e.message}"
 				rescue Mandrill::Error => e
 					msg="A mandrill error occurred: #{e.class} - #{e.message}"
 					API.log.error(msg)
@@ -138,6 +154,47 @@ END
 				slack_notifications(notifs)
 				error!(errors.join("\n"),400) unless errors.empty?
 				return answer
+			end
+
+			params do
+				requires :key, allow_blank: false, type:String
+				requires :country, allow_blank: false, type:String
+			end
+			post 'country' do
+				begin
+					pg_connect()
+					country=update_country(params["country"],params["key"])
+				rescue StandardError=>e
+					API.log.error "auth/country error [#{params['country']}]: #{e.message}"
+				rescue PG::Error=>e
+					API.log.error "auth/country PG error [#{params['country']}]: #{e.message}"
+				ensure
+					pg_close()
+				end
+				return country
+			end
+
+			params do
+				requires :key, allow_blank: false, type:String
+				requires :city, allow_blank: false, type:String
+				requires :france, allow_blank: false, type:Boolean
+				optional :num_circonscription, type:Integer
+				optional :num_commune, type:Integer
+				optional :code_departement, type:String
+			end
+			post 'city' do
+				puts "EH ben"
+				begin
+					pg_connect()
+					city=update_city(params["city"],params["key"],params["france"],params["num_circonscription"],params["num_commune"],params["code_departement"])
+				rescue StandardError=>e
+					API.log.error "auth/city error [#{params['city']}]: #{e.message}"
+				rescue PG::Error=>e
+					API.log.error "auth/city PG error [#{params['city']}]: #{e.message}"
+				ensure
+					pg_close()
+				end
+				return city
 			end
 		end
 	end

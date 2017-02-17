@@ -138,7 +138,7 @@ END
 
 			get 'step/:user_key' do
 				step=params['step']
-				steps=["verif_email","firstname","lastname","city","birthday","phone","verif_phone","facebook","ballot_creation"]
+				steps=["verif_email","firstname","lastname","country","city","birthday","phone","verif_phone","facebook","ballot_creation"]
 				return {"error"=>"missing step"} if step.nil?
 				return {"error"=>"unknown step"} if !steps.include?(step)
 				pg_connect()
