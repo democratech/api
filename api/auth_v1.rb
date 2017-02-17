@@ -67,10 +67,16 @@ END
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
-				def track_step(citoyen,step,ballot_id=nil)
+				def nb_sms_sent(email,nb_days=30)
+					nb_sms="SELECT count(*),email FROM auth_history as au WHERE email=$1 AND time>(now()- ($2 ||' days')::INTERVAL) AND step='sms_sent' GROUP BY email"
+					res=API.pg.exec_params(nb_sms,[email,nb_days])
+					return res.num_tuples.zero? ? 0 : res[0]['count'].to_i
+				end
+
+				def track_step(citoyen,step,ballot_id=nil,telephone=nil)
 					ua=get_user_agent()
-					track_step="INSERT INTO auth_history (email,useragent_id,ballot_id,ip_address,ip_forwarded,step) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *"
-					res=API.pg.exec_params(track_step,[citoyen['email'],ua['useragent_id'],ballot_id,request.ip,request.env["HTTP_X_FORWARDED_FOR"],step])
+					track_step_q="INSERT INTO auth_history (email,useragent_id,ballot_id,telephone,ip_address,ip_forwarded,step) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *"
+					res=API.pg.exec_params(track_step_q,[citoyen['email'],ua['useragent_id'],ballot_id,telephone,request.ip,request.env["HTTP_X_FORWARDED_FOR"],step])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
@@ -107,19 +113,14 @@ END
 				end
 
 				def guess_birthdate(val)
-					begin
-						val=Date.parse(val).strftime("%Y-%m-%d")
-						return val
-					rescue ArgumentError=>e
-						return nil if val.length!=8
-						jj=val[0..1]
-						mm=val[2..3]
-						aaaa=val[4..8]
-						return nil if (jj.to_i<1 || jj.to_i>31)
-						return nil if (mm.to_i<1 || mm.to_i>12)
-						return nil if (aaaa.to_i<1916 || aaaa.to_i>2010)
-						return aaaa+'-'+mm+'-'+jj
-					end
+					val=Date.parse(val).strftime("%Y-%m-%d")
+					aaaa=val[0..3]
+					mm=val[5..6]
+					jj=val[8..9]
+					raise "wrong date" if (jj.to_i<1 || jj.to_i>31)
+					raise "wrong date" if (mm.to_i<1 || mm.to_i>12)
+					raise "wrong date" if (aaaa.to_i<1900 || aaaa.to_i>2010)
+					return val
 				end
 
 				def get_geodata(ip)
@@ -211,15 +212,22 @@ END
 						API.log.warn "phone/lookup orphan phone #{phone_number} is assigned to user #{citoyen['email']}"
 						update_user_with_phone(citoyen,phone_number)
 					elsif phone['user_key']!=user_key then # phone is already used by someone
+						rm=phone['email'].sub(/^.{1}(.*)@.*$/,'\1')
+						l=rm.length
+						r=''
+						l.times { r+='*' }
+						email=phone['email'].sub(rm,r)
 						API.log.error "phone/lookup phone #{phone_number} is already registered by another user"
-						return {"error"=>"phone_already_used" }
+						return {"error"=>"phone_already_used","email"=>email}
 					end
 					answer={"tel"=>"#{phone_number}"}
 					dial_code=phone['prefix']
+					return {"error"=>"too_many_attempts"} if (nb_sms_sent(citoyen['email'],30)>3)
 					response = Authy::PhoneVerification.start(via: type, country_code: dial_code, phone_number: national)
 					if response.ok? then
 						answer["verif_sent"]="yes"
 						update_phone({'phone_number'=>phone_number,'carrier'=>response.carrier,'is_cellphone'=>response.is_cellphone})
+						track_step(citoyen,'sms_sent',nil,phone_number)
 					end
 					API.log.error "phone/lookup phone verification did not start: #{citoyen['email']} / via: #{type}, cc: #{dial_code}, phone: #{national}" unless response.ok?
 				rescue Twilio::REST::RequestError=>e

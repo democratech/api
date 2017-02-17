@@ -98,6 +98,7 @@ END
 					email=validate_email(params['email'])
 					raise "email rejected" if email.nil?
 					citizen=get_citizen_by_email(email)
+					answer['redirect_url']='/citoyen/verif/'+CGI.escape(email)
 					if citizen.nil? then #user does not yet exists
 						new_user=<<END
 INSERT INTO users (email,referer,user_key,referal_code,organization_id,hash)
@@ -111,7 +112,7 @@ END
 						raise "user not registered" if res1.num_tuples.zero?
 						citizen=res1[0]
 						answer['new_user']=true
-						answer['redirect_url']='/citoyen/verif/'+CGI.escape(email)
+						answer['redirect_url']+="?newcitizen=1"
 						email_notification['template']='laprimaire-org-signup';
 						email_notification['subject']='Bienvenue sur LaPrimaire.org !';
 						info="Nouvel inscrit à LaPrimaire.org"
@@ -122,8 +123,6 @@ END
 							":memo:",
 							"pg"
 						])
-					else
-						answer['redirect_url']="/citoyen/auth/#{citizen['user_key']}"
 					end
 					message= {
 						:to=>[{ :email=> email }],
