@@ -98,7 +98,7 @@ END
 					email=validate_email(params['email'])
 					raise "email rejected" if email.nil?
 					citizen=get_citizen_by_email(email)
-					answer['redirect_url']='/citoyen/verif/'+CGI.escape(email)
+					answer['redirect_url']='https://laprimaire.org/citoyen/verif/'+CGI.escape(email)
 					if citizen.nil? then #user does not yet exists
 						new_user=<<END
 INSERT INTO users (email,referer,user_key,referal_code,organization_id,hash)
