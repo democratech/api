@@ -101,14 +101,11 @@ END
 					answer['redirect_url']='https://laprimaire.org/citoyen/verif/'+CGI.escape(email)
 					if citizen.nil? then #user does not yet exists
 						new_user=<<END
-INSERT INTO users (email,referer,user_key,referal_code,organization_id,hash)
-SELECT $1::text,$2::text,md5(random()::text),substring(md5($1) from 1 for 8),e.organization_id,encode(digest($1,'sha256'),'hex')
-FROM (SELECT distinct organization_id FROM elections WHERE hostname=$3) as e
-RETURNING *;
+INSERT INTO users (email,referer,user_key,referal_code,hash)
+VALUES ($1::text,$2::text,md5(random()::text),substring(md5($1) from 1 for 8),encode(digest($1,'sha256'),'hex'))
+RETURNING *
 END
-						hostname=request.host
-						hostname='legislatives.laprimaire.org' if ::DEBUG
-						res1=API.pg.exec_params(new_user,[email,referer,hostname])
+						res1=API.pg.exec_params(new_user,[email,referer])
 						raise "user not registered" if res1.num_tuples.zero?
 						citizen=res1[0]
 						answer['new_user']=true
