@@ -108,6 +108,12 @@ END
 						res1=API.pg.exec_params(new_user,[email,referer])
 						raise "user not registered" if res1.num_tuples.zero?
 						citizen=res1[0]
+						register_user_to_organization=<<END
+INSERT INTO organizations_users (email,organization_id) VALUES ($1,1) RETURNING *
+END
+						hostname=request.host
+						res2=API.pg.exec_params(register_user_to_organization,[email])
+						raise "user not registered to organization" if res2.num_tuples.zero?
 						answer['new_user']=true
 						answer['redirect_url']+="?newcitizen=1"
 						email_notification['template']='laprimaire-org-signup';
