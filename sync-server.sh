@@ -1,1 +1,1 @@
-rsync -avz --delete --exclude=logs --exclude=pid . root@democratech-api:/home/laprimaire/api.democratech.co/
+rsync -avz --delete --exclude=logs --exclude=pid . root@democratech-bot:/home/laprimaire/api.democratech.co/
