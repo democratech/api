@@ -21,7 +21,9 @@
 module Democratech
 	class EmailV1 < Grape::API
 		version ['v1','v2']
-		format :json
+		content_type :json, 'application/json'
+		content_type :txt, 'text/plain'
+		default_format :json
 
 		get do
 			# DO NOT DELETE used to test the api is live
@@ -154,6 +156,19 @@ module Democratech
 					return {"error"=>e.message}
 				ensure
 					pg_close()
+				end
+			end
+
+			post 'sns/bounce' do
+				body=JSON.parse(env['api.request.body'])
+				type=headers['X-Amz-Sns-Message-Type']
+				if type=="SubscriptionConfirmation" then
+					url=body["SubscribeURL"]
+					puts "AAAAAAAAAAAa"+url
+					if not url.nil? then
+						puts URI.parse(url) 
+					end
+				else
 				end
 			end
 		end
