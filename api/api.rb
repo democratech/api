@@ -101,7 +101,7 @@ module Democratech
 			end
 
 			def pg_close()
-				Democratech::API.pg.close
+				Democratech::API.pg.close unless Democratech::API.pg.nil?
 			end
 		end
 

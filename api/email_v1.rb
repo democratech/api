@@ -159,16 +159,44 @@ module Democratech
 				end
 			end
 
-			post 'sns/bounce' do
+			post 'sns/:key' do
+				error!('401 Unauthorized', 401) unless webhook_authorized(params['key'])
 				body=JSON.parse(env['api.request.body'])
-				type=headers['X-Amz-Sns-Message-Type']
-				if type=="SubscriptionConfirmation" then
+				msg_type=headers['X-Amz-Sns-Message-Type']
+				if msg_type=="SubscriptionConfirmation" then
 					url=body["SubscribeURL"]
-					puts "AAAAAAAAAAAa"+url
-					if not url.nil? then
-						puts URI.parse(url) 
+					puts url
+				elsif msg_type=="Notification" then
+					query1="update users set email_status=$1, validation_level=(validation_level | $2) where email=$3"
+					query2="update users set email_status=$1, validation_level=(validation_level & $2) where email=$3"
+					status={
+						'sent'=>2,
+						'spam'=>1,
+						'unsub'=>-1,
+						'bounce'=>-2,
+					}
+					message=JSON.parse(body["Message"])
+					type=message["notificationType"]
+					return if type=="AmazonSnsSubscriptionSucceeded"
+					email=message["mail"]["destination"][0]
+					return error!('400 Bad request', 400) if email.nil? || email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
+					begin
+						pg_connect()
+						case type
+						when 'Delivery' then
+							res=API.pg.exec_params(query1,[status['sent'],1,email])
+						when 'Bounce' then
+							res=API.pg.exec_params(query2,[status['bounce'],2,email])
+						when 'Complaint' then
+							res=API.pg.exec_params(query2,[status['spam'],2,email])
+						else
+							puts"NOT FOUND #{type} : #{email}"
+						end
+					rescue PG::Error=>e
+						return {"error"=>e.message}
+					ensure
+						pg_close()
 					end
-				else
 				end
 			end
 		end
