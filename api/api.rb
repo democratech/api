@@ -21,7 +21,7 @@
 module Democratech
 	class API < Grape::API
 		class << self
-			attr_accessor :db, :mg_client, :mandrill, :pg, :aws, :log, :twilio, :authy
+			attr_accessor :pg, :aws, :log, :twilio, :authy, :mailer
 		end
 
 		get do
@@ -82,7 +82,7 @@ module Democratech
 
 			def pg_connect()
 				if ::DEBUG then
-					Democratech::API.pg=PG.connect(
+					API.pg=PG.connect(
 						"dbname"=>PGNAME_TEST,
 						"user"=>PGUSER_TEST,
 						"password"=>PGPWD_TEST,
@@ -90,7 +90,7 @@ module Democratech
 						"port"=>PGPORT
 					)
 				else
-					Democratech::API.pg=PG.connect(
+					API.pg=PG.connect(
 						"dbname"=>PGNAME,
 						"user"=>PGUSER,
 						"password"=>PGPWD,
@@ -101,7 +101,7 @@ module Democratech
 			end
 
 			def pg_close()
-				Democratech::API.pg.close unless Democratech::API.pg.nil?
+				API.pg.close unless API.pg.nil?
 			end
 		end
 

@@ -138,7 +138,19 @@ END
 							}]
 						}]
 					}
-					result=API.mandrill.messages.send_template(email_notification['template'],[],message)
+					template_html=API.mailer.load_template("laprimaire-org-signup.html")
+					template_txt=API.mailer.load_template("laprimaire-org-signup.txt")
+					email={
+						'to'=>[email],
+						'from'=>'contact@laprimaire.org',
+						'subject'=>'Test bienvenue',
+						'txt'=>''
+					}
+					email['html']=template_html.gsub('*|SUBJECT|*',citizen['user_key']) if not template_html.nil?
+					email['html'].gsub!('*|USER_KEY|*',citizen['user_key']) if not template_html.nil?
+					email['html']=template_txt.gsub('*|SUBJECT|*',citizen['user_key']) if not template_txt.nil?
+					email['html'].gsub!('*|USER_KEY|*',citizen['user_key']) if not template_txt.nil?
+					result=API.mailer.send_email(email)
 					answer['email_sent']=true
 				rescue StandardError=>e
 					status 403
@@ -147,9 +159,6 @@ END
 				rescue PG::Error=>e
 					status 500
 					API.log.error "auth/login PG error #{e.message}"
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					API.log.error(msg)
 				ensure
 					pg_close()
 				end
