@@ -131,7 +131,7 @@ END
 					template_txt=API.mailer.load_template(email_notification['template']+".txt")
 					email={
 						'to'=>[email],
-						'from'=>'contact@laprimaire.org',
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
 						'subject'=>email_notification['subject'],
 						'txt'=>''
 					}
