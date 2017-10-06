@@ -127,23 +127,12 @@ END
 							"pg"
 						])
 					end
-					message= {
-						:to=>[{ :email=> email }],
-						:subject=> email_notification['subject'],
-						:merge_vars=>[{
-							:rcpt=>email,
-							:vars=>[{
-								:name=>"USER_KEY",
-								:content=>citizen['user_key']
-							}]
-						}]
-					}
-					template_html=API.mailer.load_template("laprimaire-org-signup.html")
-					template_txt=API.mailer.load_template("laprimaire-org-signup.txt")
+					template_html=API.mailer.load_template(email_notification['template']+".html")
+					template_txt=API.mailer.load_template(email_notification['template']+".txt")
 					email={
 						'to'=>[email],
 						'from'=>'contact@laprimaire.org',
-						'subject'=>'Test bienvenue',
+						'subject'=>email_notification['subject'],
 						'txt'=>''
 					}
 					email['html']=template_html.gsub('*|SUBJECT|*',citizen['user_key']) if not template_html.nil?
