@@ -21,7 +21,7 @@
 module Democratech
 	class API < Grape::API
 		class << self
-			attr_accessor :pg, :aws, :log, :twilio, :authy, :mailer
+			attr_accessor :pg, :aws, :log, :twilio, :authy, :mailer, :newsletter
 		end
 
 		get do

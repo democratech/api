@@ -24,6 +24,12 @@ Democratech::API.twilio = Twilio::REST::LookupsClient.new(TWILIO_ACC_SID,TWILIO_
 Authy.api_key = AUTHY_API_KEY
 Authy.api_uri = AUTHY_API_URI
 Democratech::API.mailer=Democratech::Mailer.new()
+Sendyr.configure do |c|
+	c.url=SENDY_ENDPOINT
+	c.api_key=SENDY_API_KEY
+	# c.noop=DEBUG
+end
+Democratech::API.newsletter=Sendyr::Client.new(SENDY_LIST_ID)
 Democratech::API.aws=Aws::S3::Resource.new(credentials: Aws::Credentials.new(AWS_API_KEY,AWS_API_SECRET),region: AWS_REGION)
 Stripe.api_key=STR_KEY
 

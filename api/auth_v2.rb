@@ -120,6 +120,7 @@ END
 						email_notification['subject']='Bienvenue sur LaPrimaire.org !';
 						info="Nouvel inscrit à LaPrimaire.org"
 						API.log.info(info)
+						API.newsletter.subscribe(email: email)
 						notifs.push([
 							info,
 							"supporteurs",
