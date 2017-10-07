@@ -73,33 +73,6 @@ module Democratech
 					return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
 					notifs=[]
 					email=email.downcase
-					message= {
-						:from_name=> "LaPrimaire.org",
-						:subject=> "Pour un vrai choix de candidats en 2017  !",
-						:to=>[{ :email=> "email_dest" }],
-						:merge_vars=>[
-							{
-								:vars=>[
-									{
-										:name=>"CANDIDATE",
-										:content=>"john"
-									},
-									{
-										:name=>"CANDIDATE_ID",
-										:content=>"doe"
-									},
-									{
-										:name=>"NB_SOUTIENS",
-										:content=>"doe"
-									},
-									{
-										:name=>"SLUG",
-										:content=>"doe"
-									}
-								]
-							}
-						]
-					}
 					get_candidate=<<END
 SELECT c.candidate_id,c.name,c.slug,count(*) as nb_soutiens FROM candidates as c INNER JOIN supporters as s ON (s.candidate_id=c.candidate_id) WHERE s.candidate_id=$1 GROUP BY c.candidate_id,c.name,c.slug
 END
@@ -111,28 +84,34 @@ END
 				end
 				if not res.nil? and not res.num_tuples.zero? then
 					candidate=res[0]
-					msg=message
-					msg[:subject]="Soutenez la candidature citoyenne de #{candidate['name']} sur LaPrimaire.org"
-					msg[:to][0][:email]=email
-					msg[:merge_vars][0][:rcpt]=email
-					msg[:merge_vars][0][:vars][0][:content]=candidate["name"]
-					msg[:merge_vars][0][:vars][1][:content]=candidate["candidate_id"]
-					msg[:merge_vars][0][:vars][2][:content]=candidate["nb_soutiens"]
-					msg[:merge_vars][0][:vars][3][:content]=candidate["slug"]
+					email={
+						'to'=>[email],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Soutenez la candidature citoyenne de #{candidate['name']} sur LaPrimaire.org",
+						'txt'=>''
+					}
+					template={
+						'name'=>"laprimaire-org-support-candidate",
+						'vars'=>{
+							"*|CANDIDATE|*"=>candidate['name'],
+							"*|CANDIDATE_ID|*"=>candidate['candidate_id'],
+							"*|NB_SOUTIENS|*"=>candidate['nb_soutiens'],
+							"*|SLUG|*"=>candidate['slug']
+						}
+					}
+					template['name']="laprimaire-org-support-candidate-phase-2" if phase!="1"
 					begin
-						if phase=="1" then
-							result=API.mandrill.messages.send_template("laprimaire-org-support-candidate",[],msg)
-						else
-							result=API.mandrill.messages.send_template("laprimaire-org-support-candidate-phase-2",[],msg)
-						end
+						result=API.mailer.send_email(email,template)
+						raise "email could not be sent" if result.nil?
 						notifs.push([
 							"Nouveau email de support pour #{candidate['name']} demandé !",
 							"social_media",
 							":email:",
 							"wufoo"
 						])
-					rescue Mandrill::Error => e
-						msg="A mandrill error occurred: #{e.class} - #{e.message}"
+					rescue StandardError=>e
+						API.log.error "candidat/share error #{e.message}"
+						msg="A SES error occurred: #{e.class} - #{e.message}"
 						notifs.push([
 							"Erreur lors de l'envoi d'un email : %s" % [msg],
 							"errors",

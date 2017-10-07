@@ -141,19 +141,20 @@ END
 				end
 
 				begin
-					message= {
-						:to=>[{
-							:email=> "#{doc[:email]}",
-							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
-						}],
-						:merge_vars=>[{
-							:rcpt=>"#{doc[:email]}"
-						}]
+					email={
+						'to'=>["#{doc[:firstname]} #{doc[:lastname]} <#{doc[:email]}>"],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Merci !",
+						'txt'=>''
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-appel-aux-maires-merci",[],message)
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					STDERR.puts msg
+					template={
+						'name'=>"laprimaire-org-appel-aux-maires-merci",
+						'vars'=>{}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
+				rescue StandardError=>e
+					API.log.error "app/maires error #{e.message}"
 				end
 
 				# 4. We send the notifications and return
@@ -238,19 +239,20 @@ END
 				end
 
 				begin
-					message= {
-						:to=>[{
-							:email=> "#{doc[:email]}",
-							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
-						}],
-						:merge_vars=>[{
-							:rcpt=>"#{doc[:email]}"
-						}]
+					email={
+						'to'=>["#{doc[:firstname]} #{doc[:lastname]} <#{doc[:email]}>"],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Merci !",
+						'txt'=>''
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-appel-aux-femmes-merci",[],message)
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					STDERR.puts msg
+					template={
+						'name'=>"laprimaire-org-appel-aux-femmes-merci",
+						'vars'=>{}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
+				rescue StandardError=>e
+					API.log.error "app/candidates error #{e.message}"
 				end
 
 				# 4. We send the notifications and return
@@ -318,19 +320,20 @@ END
 				end
 
 				begin
-					message= {
-						:to=>[{
-							:email=> "#{doc[:email]}",
-							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
-						}],
-						:merge_vars=>[{
-							:rcpt=>"#{doc[:email]}"
-						}]
+					email={
+						'to'=>["#{doc[:firstname]} #{doc[:lastname]} <#{doc[:email]}>"],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Merci !",
+						'txt'=>''
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-bienvenue",[],message)
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					STDERR.puts msg
+					template={
+						'name'=>"laprimaire-org-bienvenue",
+						'vars'=>{}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
+				rescue StandardError=>e
+					API.log.error "app/citoyen error #{e.message}"
 				end
 
 				# 4. We send the notifications and return

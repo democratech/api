@@ -52,27 +52,29 @@ module Democratech
 				return if email.match(/\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/).nil?
 				notifs=[]
 				email=email.downcase
-				message= {  
-					:subject=> "LaPrimaire.org, pour un VRAI choix de candidats en 2017 !",  
-					:from_name=> "LaPrimaire.org",  
-					:text=>"",  
-					:to=>[  
-						{  
-							:email=> email
-						}  
-					],  
-					:from_email=>"hello@democratech.co"
-				}
 				begin
-					result=API.mandrill.messages.send_template("laprimaire-org-share-email",[],message)
+					email={
+						'to'=>[email],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"LaPrimaire.org, pour un VRAI choix de candidats en 2017 !",
+						'txt'=>''
+					}
+					template={
+						'name'=>"laprimaire-org-share-email",
+						'vars'=>{}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
 					notifs.push([
 						"Nouveau partage email demandé !",
 						"social_media",
 						":email:",
 						"wufoo"
 					])
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
+				rescue StandardError=>e
+					status 403
+					API.log.error "email/share error #{e.message}"
+					msg="A SES error occurred: #{e.class} - #{e.message}"
 					notifs.push([
 						"Erreur lors de l'envoi d'un email : %s" % [msg],
 						"errors",

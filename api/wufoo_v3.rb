@@ -222,21 +222,23 @@ END
 					pg_close()
 				end
 				# 2. Email notification to the candidate with its admin page and instructions
-				message= {
-					:to=>[{
-						:email=> "#{maj[:email]}",
-						:name=> "#{maj[:name]}"
-					}],
-					:merge_vars=>[{
-						:rcpt=>"#{maj[:email]}",
-						:vars=>[ {:name=>"CANDIDATE_KEY",:content=>"#{candidate_key}"} ]
-					}]
-				}
 				begin
-					result=API.mandrill.messages.send_template("legislatives-candidats-bienvenue",[],message)
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					STDERR.puts msg
+					email={
+						'to'=>["#{maj[:name]} <#{maj[:email]}>"],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Bienvenue !",
+						'txt'=>''
+					}
+					template={
+						'name'=>"legislatives-candidats-bienvenue",
+						'vars'=>{
+							"*|CANDIDATE_KEY|*"=>"#{candidate_key}"
+						}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
+				rescue StandardError=>e
+					API.log.error "wufoo/preinscription error #{e.message}"
 				end
 
 				# 2. Slack notification

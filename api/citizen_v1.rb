@@ -183,23 +183,22 @@ END
 					pg_close()
 				end
 				begin
-					message= {
-						:to=>[{
-							:email=> "#{doc[:email]}",
-							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
-						}],
-						:merge_vars=>[{
-							:rcpt=>"#{doc[:email]}",
-							:vars=>[{
-								:name=>"USER_KEY",
-								:content=>citoyen['user_key']
-							}]
-						}]
+					email={
+						'to'=>["#{doc[:firstname]} #{doc[:lastname]} <#{doc[:email]}>"],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Second tour de vote !",
+						'txt'=>''
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-2nd-tour-de-vote-mini",[],message)
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					API.log.error(msg)
+					template={
+						'name'=>"laprimaire-org-2nd-tour-de-vote-mini",
+						'vars'=>{
+							"*|USER_KEY|*"=>citoyen['user_key']
+						}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
+				rescue StandardError=>e
+					API.log.error "citizen/voter error #{e.message}"
 				end
 
 				# 4. We send the notifications and return
@@ -269,19 +268,20 @@ END
 					pg_close()
 				end
 				begin
-					message= {
-						:to=>[{
-							:email=> "#{doc[:email]}",
-							:name=> "#{doc[:firstname]} #{doc[:lastname]}"
-						}],
-						:merge_vars=>[{
-							:rcpt=>"#{doc[:email]}"
-						}]
+					email={
+						'to'=>["#{doc[:firstname]} #{doc[:lastname]} <#{doc[:email]}>"],
+						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
+						'subject'=>"Bienvenue !",
+						'txt'=>''
 					}
-					result=API.mandrill.messages.send_template("laprimaire-org-bienvenue",[],message)
-				rescue Mandrill::Error => e
-					msg="A mandrill error occurred: #{e.class} - #{e.message}"
-					STDERR.puts msg
+					template={
+						'name'=>"laprimaire-org-bienvenue",
+						'vars'=>{}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
+				rescue StandardError=>e
+					API.log.error "citizen/add error #{e.message}"
 				end
 
 				# 4. We send the notifications and return

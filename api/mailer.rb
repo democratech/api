@@ -30,9 +30,19 @@ module Democratech
 			return File.read(path)
 		end
 
-		def send_email(email,encoding="UTF-8")
+		def send_email(email,template=nil,encoding="UTF-8")
 			API.log.info "#{__method__}: email: #{email['to']}"
 			begin
+				if not template.nil? then
+					template_html=API.mailer.load_template(template['name']+".html")
+					template_txt=API.mailer.load_template(template['name']+".txt")
+					email['html']=template_html unless template_html.nil?
+					email['txt']=template_txt unless template_txt.nil?
+					template['vars'].each do |k,v|
+						email['html'].gsub!(k,v) unless template_html.nil?
+						email['txt'].gsub!(k,v) unless template_txt.nil?
+					end
+				end
 				result=@@client.send_email({
 					destination: {
 						to_addresses: email['to']

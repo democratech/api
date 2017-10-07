@@ -127,19 +127,21 @@ END
 							"pg"
 						])
 					end
-					template_html=API.mailer.load_template(email_notification['template']+".html")
-					template_txt=API.mailer.load_template(email_notification['template']+".txt")
 					email={
 						'to'=>[email],
 						'from'=>'LaPrimaire.org <contact@laprimaire.org>',
 						'subject'=>email_notification['subject'],
 						'txt'=>''
 					}
-					email['html']=template_html.gsub('*|SUBJECT|*',citizen['user_key']) if not template_html.nil?
-					email['html'].gsub!('*|USER_KEY|*',citizen['user_key']) if not template_html.nil?
-					email['html']=template_txt.gsub('*|SUBJECT|*',citizen['user_key']) if not template_txt.nil?
-					email['html'].gsub!('*|USER_KEY|*',citizen['user_key']) if not template_txt.nil?
-					result=API.mailer.send_email(email)
+					template={
+						'name'=>email_notification['template'],
+						'vars'=>{
+							'*|SUBJECT|*'=>email_notification['subject'],
+							'*|USER_KEY|*'=>citizen['user_key']
+						}
+					}
+					result=API.mailer.send_email(email,template)
+					raise "email could not be sent" if result.nil?
 					answer['email_sent']=true
 				rescue StandardError=>e
 					status 403
@@ -183,7 +185,6 @@ END
 				optional :code_departement, type:String
 			end
 			post 'city' do
-				puts "EH ben"
 				begin
 					pg_connect()
 					city=update_city(params["city"],params["key"],params["france"],params["num_circonscription"],params["num_commune"],params["code_departement"])
