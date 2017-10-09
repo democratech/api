@@ -167,7 +167,7 @@ module Democratech
 				msg_type=headers['X-Amz-Sns-Message-Type']
 				if msg_type=="SubscriptionConfirmation" then
 					url=body["SubscribeURL"]
-					puts url
+					API.log.error(url)
 				elsif msg_type=="Notification" then
 					query1="update users set email_status=$1, validation_level=(validation_level | $2) where email=$3 and email_status!=$1"
 					query2="update users set email_status=$1, validation_level=(validation_level & $2) where email=$3 and email_status!=$1"

@@ -119,8 +119,7 @@ END
 						email_notification['template']='laprimaire-org-signup';
 						email_notification['subject']='Bienvenue sur LaPrimaire.org !';
 						info="Nouvel inscrit à LaPrimaire.org"
-						API.log.info(info)
-						API.newsletter.subscribe(email: email,'Registered': citizen['registered'], 'Validationlevel'=>citizen['validation_level'].to_s)
+						API.newsletter.subscribe(email: email,'Registered'=> citizen['registered'], 'Validationlevel'=>citizen['validation_level'].to_s)
 						notifs.push([
 							info,
 							"supporteurs",

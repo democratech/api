@@ -26,10 +26,10 @@ preload_app true
 
 # feel free to point this anywhere accessible on the filesystem
 if ENV['RACK_ENV']=='production' then
-	stderr_path "/var/log/unicorn/api.democratech.co.err.log"
-	stdout_path "/var/log/unicorn/api.democratech.co.log"
-	worker_processes 5
 	user 'www-data', 'www-data'
+	stderr_path "%s/log/api.democratech.co.err.log" % [APP_ROOT]
+	stdout_path "%s/log/api.democratech.co.log" % [APP_ROOT]
+	worker_processes 5
 end
 pid "%s/pid/pid" % [APP_ROOT]
 
