@@ -169,8 +169,8 @@ module Democratech
 					url=body["SubscribeURL"]
 					puts url
 				elsif msg_type=="Notification" then
-					query1="update users set email_status=$1, validation_level=(validation_level | $2) where email=$3"
-					query2="update users set email_status=$1, validation_level=(validation_level & $2) where email=$3"
+					query1="update users set email_status=$1, validation_level=(validation_level | $2) where email=$3 and email_status!=$1"
+					query2="update users set email_status=$1, validation_level=(validation_level & $2) where email=$3 and email_status!=$1"
 					status={
 						'sent'=>2,
 						'spam'=>1,

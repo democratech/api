@@ -167,16 +167,19 @@ END
 				begin
 					user_key=params['user_key']
 					citoyen=get_citizen(user_key)
-					return {"info"=>"already_verified"} if (citoyen['validation_level'].to_i&1)==1
 					if citoyen.nil? then
 						status 403 
 						return {"error"=>"unknown_user"}
 					end
-					updated_citoyen=verify_email(citoyen)
-					if updated_citoyen.nil? then
-						API.log.error "email/verif unable to verify citizen email #{citoyen['email']}"
-						return answer
+					if (citoyen['validation_level'].to_i&1)!=1 then
+						updated_citoyen=verify_email(citoyen)
+						if updated_citoyen.nil? then
+							API.log.error "email/verif unable to verify citizen email #{citoyen['email']}"
+							return answer
+						end
+						citoyen['validation_level']=updated_citoyen['validation_level']
 					end
+					API.newsletter.update_subscription(citoyen['email'],'Validationlevel'=> citoyen['validation_level'])
 					answer["verified"]="yes"
 				rescue PG::Error=>e
 					status 500
@@ -259,6 +262,7 @@ END
 						update_validation="UPDATE users SET validation_level=(validation_level|2) WHERE user_key=$1 RETURNING *"
 						res=API.pg.exec_params(update_validation,[user_key])
 						API.log.error "phone/verif unable to user validation level for #{citoyen['email']} / #{phone}" if res.num_tuples.zero?
+						API.newsletter.update_subscription(citoyen['email'],'Validationlevel'=> update_validation['validation_level'])
 					else
 						API.log.error "phone/verif wrong code #{code} for #{citoyen['email']} : country_code #{citoyen['prefix']}, phone : #{citoyen['international']}"
 					end
@@ -292,6 +296,8 @@ END
 					end
 					val=guess_birthdate(val) if key=="birthday"
 					update_citizen(citoyen,{"key"=>key,"val"=>val})
+					API.newsletter.update_subscription(citoyen['email'],'Firstname'=> val) if key=="firstname"
+					API.newsletter.update_subscription(citoyen['email'], name: citoyen['firstname']+' '+val, 'Lastname'=> val) if key=="lastname"
 					answer[key]=val
 				rescue ArgumentError=>e
 					status 500

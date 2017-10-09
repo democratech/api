@@ -56,17 +56,17 @@ END
 				end
 
 				def update_country(country,user_key)
-					country_save="UPDATE users as u SET country=$1 FROM countries as c WHERE u.user_key=$2 AND c.name=$1 RETURNING c.name,c.dial_code"
+					country_save="UPDATE users as u SET country=$1 FROM countries as c WHERE u.user_key=$2 AND c.name=$1 RETURNING c.name,c.dial_code,u.email"
 					res=API.pg.exec_params(country_save,[country,user_key])
 					return res.num_tuples.zero? ? nil : res[0]
 				end
 
 				def update_city(city,user_key,france=true,num_circonscription=nil,num_commune=nil,code_departement=nil)
 					if france then
-						city_save="UPDATE users as u SET city=$1, city_id=c.city_id FROM circos as c WHERE u.user_key=$2 AND c.num_circonscription=$3 AND c.num_commune=$4 AND c.departement=$5 RETURNING city"
+						city_save="UPDATE users as u SET city=$1, city_id=c.city_id FROM circos as c INNER JOIN cities as ci ON (ci.city_id=c.city_id) WHERE u.user_key=$2 AND c.num_circonscription=$3 AND c.num_commune=$4 AND c.departement=$5 RETURNING u.email, u.city, ci.zipcode, ci.departement"
 						params=[city,user_key,num_circonscription,num_commune,code_departement]
 					else
-						city_save="UPDATE users as u SET city=$1 WHERE u.user_key=$2 RETURNING city, null as circonscription_id" 
+						city_save="UPDATE users as u SET city=$1 WHERE u.user_key=$2 RETURNING u.email, u.city, null as circonscription_id, null as zipcode, null as departement" 
 						params=[city,user_key]
 					end
 					res=API.pg.exec_params(city_save,params)
@@ -120,7 +120,7 @@ END
 						email_notification['subject']='Bienvenue sur LaPrimaire.org !';
 						info="Nouvel inscrit à LaPrimaire.org"
 						API.log.info(info)
-						API.newsletter.subscribe(email: email)
+						API.newsletter.subscribe(email: email,'Registered': citizen['registered'], 'Validationlevel'=>citizen['validation_level'].to_s)
 						notifs.push([
 							info,
 							"supporteurs",
@@ -167,6 +167,7 @@ END
 				begin
 					pg_connect()
 					country=update_country(params["country"],params["key"])
+					API.newsletter.update_subscription(country['email'],'Country'=>country['name']) unless country.nil?
 				rescue StandardError=>e
 					API.log.error "auth/country error [#{params['country']}]: #{e.message}"
 				rescue PG::Error=>e
@@ -189,6 +190,7 @@ END
 				begin
 					pg_connect()
 					city=update_city(params["city"],params["key"],params["france"],params["num_circonscription"],params["num_commune"],params["code_departement"])
+					API.newsletter.update_subscription(city['email'],'City'=>city['city'], 'Zipcode'=> city['zipcode'],'Numdepartement'=>city["departement"]) unless city.nil? or city['zipcode'].nil?
 				rescue StandardError=>e
 					API.log.error "auth/city error [#{params['city']}]: #{e.message}"
 				rescue PG::Error=>e
