@@ -88,7 +88,7 @@ module Democratech
 						transaction['transaction_id']
 					]
 					upd_transaction=<<END
-UPDATE donations SET status=$1, amount_raw=$2, currency=$3, change_rate=$4, amount=$5, auth_result=$6, threeds=$7, threeds_status=$8, card_brand=$9, card_number=$10, card_expiry_month=$11, card_expiry_year=$12, card_bank_code=$13, card_bank_product=$14, card_country=$15, order_id=$16, email=$17 WHERE donation_id=$18 RETURNING *
+UPDATE donations SET status=$1, amount_raw=$2, currency=$3, change_rate=$4, amount=$5, auth_result=$6, threeds=$7, threeds_status=$8, card_brand=$9, card_number=$10, card_expiry_month=$11, card_expiry_year=$12, card_bank_code=$13, card_bank_product=$14, card_country=$15, order_id=$16, email=$17, finished=CURRENT_TIMESTAMP WHERE donation_id=$18 RETURNING *
 END
 					res=API.pg.exec_params(upd_transaction,params)
 					return res.num_tuples.zero? ? nil : res[0]
@@ -170,7 +170,7 @@ END
 				answer={}
 				pg_connect()
 				begin
-					transaction=search_opened_transaction(donateur['email'])
+					#transaction=search_opened_transaction(donateur['email'])
 					transaction=create_transaction(donateur) if transaction.nil?
 					raise "cannot create transaction" if transaction.nil?
 					params['vads_trans_id']=transaction['donation_id']
